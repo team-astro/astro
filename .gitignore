@@ -2,3 +2,4 @@
 *.a
 *.lib
 mu-test
+build

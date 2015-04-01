@@ -23,6 +23,12 @@ namespace mu
     Ty tmp = _a; _a = _b; _b = tmp;
   }
 
+  template <typename Ty>
+  inline Ty max(Ty a, Ty b) { return a > b ? a : b; }
+
+  template <typename Ty>
+  inline Ty min(Ty a, Ty b) { return a < b ? a : b; }
+
 } // namespace mu
 
 // Annoying C++0x stuff..

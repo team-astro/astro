@@ -16,6 +16,8 @@ program_INCLUDE_DIRS := include thirdparty/catch
 program_LIBRARY_DIRS :=
 program_LIBRARIES :=
 
+CXXFLAGS += -g
+
 CPPFLAGS += $(foreach includedir,$(program_INCLUDE_DIRS),-I$(includedir))
 LDFLAGS += $(foreach libdir,$(program_LIBRARY_DIRS),-L$(libdir))
 LDFLAGS += $(foreach lib,$(program_LIBRARIES),-l$(lib))
