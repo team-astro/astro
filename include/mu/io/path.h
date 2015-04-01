@@ -38,9 +38,8 @@ namespace mu { namespace io { namespace path
   inline const char*
   get_extension(const char* path)
   {
-    char* last_dot = strrchr(path, '.');
-    char* last_sep = max(strrchr(path, *dir_separator), strrchr(path, *alt_dir_separator));
-    last_sep = max(strrchr(path, *volume_separator), last_sep);
+    const char* last_dot = strrchr(path, '.');
+    const char* last_sep = max(strrchr(path, *volume_separator), max(strrchr(path, *dir_separator), strrchr(path, *alt_dir_separator)));
 
     if (last_dot > last_sep)
       return last_dot;
@@ -56,8 +55,7 @@ namespace mu { namespace io { namespace path
     size_t plen = strlen(path);
     if (!plen) return path;
 
-    char* last_sep = max(strrchr(path, *dir_separator), strrchr(path, *alt_dir_separator));
-    last_sep = max(strrchr(path, *volume_separator), last_sep);
+    const char* last_sep = max(strrchr(path, *volume_separator), max(strrchr(path, *dir_separator), strrchr(path, *alt_dir_separator)));
 
     if (last_sep != 0)
       return last_sep + 1;
