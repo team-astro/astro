@@ -10,6 +10,13 @@
 
 #include "config.h"
 #include "macros.h"
+#include "types.h"
+
+#if MU_COMPILER_MSVC || MU_COMPILER_MSVC_COMPATIBLE
+# define MU_PACK_STRUCT __declspec(align(1))
+#else
+# define MU_PACK_STRUCT __attribute__((__packed__))
+#endif
 
 namespace mu
 {

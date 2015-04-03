@@ -7,6 +7,10 @@
 
 #include "mu.h"
 
+#if !MU_PLATFORM_WINDOWS
+# include <signal.h>
+#endif
+
 #if MU_COMPILER_MSVC
 // Workaround MSVS bug...
 # define MU_VA_ARGS_PASS(...) MU_VA_ARGS_PASS_1_ __VA_ARGS__ MU_VA_ARGS_PASS_2_
@@ -60,7 +64,7 @@
 #   define MU_THREAD /* not supported right now */
 # else
 #   if (__GNUC__ == 4) && (__GNUC_MINOR__ <= 2)
-#     define MU_THREAD /* not supported right now */  
+#     define MU_THREAD /* not supported right now */
 #   else
 #     define MU_THREAD __thread
 #   endif // __GNUC__ <= 4.2
@@ -90,6 +94,28 @@
 #else
 # define MU_CLANG_HAS_EXTENSION(_x) 0
 #endif // defined(__has_extension)
+
+#ifndef __has_builtin
+# define __has_builtin(x) 0
+#endif
+
+#if __has_builtin(__builtin_trap)
+# define MU_DEBUG_BREAK __builtin_trap()
+#elif MU_PLATFORM_WINDOWS
+# define MU_DEBUG_BREAK __debugbreak()
+#else
+# define MU_DEBUG_BREAK raise(SIGTRAP)
+#endif
+
+#if MU_ASSERTIONS_ENABLED
+# define assert(expression)                                                    \
+  if (!(expression))                                                           \
+  {                                                                            \
+    MU_DEBUG_BREAK;                                                            \
+  }
+#else
+# define assert(expression)
+#endif
 
 // #define MU_STATIC_ASSERT(_condition, ...) static_assert(_condition, "" __VA_ARGS__)
 #define MU_STATIC_ASSERT(_condition, ...) typedef char MU_CONCATENATE(MU_STATIC_ASSERT_, __LINE__)[1][(_condition)] MU_ATTRIBUTE(unused)
@@ -177,7 +203,7 @@
 # define MU_TYPE_IS_POD(t) (!__is_class(t) || __is_pod(t))
 #else
 # define MU_TYPE_IS_POD(t) false
-#endif 
+#endif
 ///
 #define MU_CLASS_NO_DEFAULT_CTOR(_class) \
       private: _class()

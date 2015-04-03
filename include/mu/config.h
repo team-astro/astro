@@ -7,4 +7,6 @@
 
 #include "platform.h"
 
+#define MU_ASSERTIONS_ENABLED 1
+
 #endif

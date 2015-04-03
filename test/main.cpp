@@ -6,6 +6,7 @@
 
 #define MU_IMPLEMENTATION
 #include <mu/mu.h>
+#include <mu/memory.h>
 #include <mu/io/path.h>
 
 #define CATCH_CONFIG_MAIN
