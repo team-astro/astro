@@ -24,6 +24,14 @@ LDFLAGS += $(foreach lib,$(program_LIBRARIES),-l$(lib))
 
 .PHONY: all clean distclean
 
+depend: .depend
+
+.depend: $(program_SRCS)
+	rm -f ./.depend
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MM $^ -MF  ./.depend;
+
+include .depend
+
 all: $(program_NAME)
 
 $(program_NAME): $(program_OBJS)

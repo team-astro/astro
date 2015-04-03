@@ -1,5 +1,6 @@
 *.o
 *.a
 *.lib
+.depend
 mu-test
 build
