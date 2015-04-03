@@ -6,6 +6,7 @@ ifeq ($(UNAME),$(filter $(UNAME),Linux Darwin))
 	else
 		OS=linux
 	endif
+	CXXFLAGS += -std=c++11
 else
 	OS=windows
 endif
@@ -21,13 +22,9 @@ program_LIBRARIES :=
 CXXFLAGS += -g -O0
 
 ifeq ($(OS),$(filter $(OS),osx ios))
-	CXXFLAGS += -std=c++11 -stdlib=libc++
-	LDFLAGS +=
-else
-	CXXFLAGS +=
+	CXXFLAGS += -stdlib=libc++
 	LDFLAGS +=
 endif
-
 
 CPPFLAGS += $(foreach includedir,$(program_INCLUDE_DIRS),-I$(includedir))
 LDFLAGS += $(foreach libdir,$(program_LIBRARY_DIRS),-L$(libdir))
@@ -35,20 +32,11 @@ LDFLAGS += $(foreach lib,$(program_LIBRARIES),-l$(lib))
 
 .PHONY: all clean distclean
 
-depend: .depend
-
-.depend: $(program_SRCS)
-	rm -f ./.depend
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MM $^ -MF  ./.depend;
-
-include .depend
-
 all: $(program_NAME)
 
 -include $(program_DEPS)
 
 %.o: %.cpp
-	@echo OS: $(OS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -x c++ -MM -MT $@ -MF $(patsubst %.o,%.dep,$@) $<
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -x c++ -c -o $@ $<
 
