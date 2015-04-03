@@ -2,6 +2,10 @@ box: dirkvdb/cxx14@0.1.0
 build:
   steps:
     - script:
-        name: build test
-        code: |
-          make
+      name: Build unit tests
+      code: |
+        make
+    - script:
+      name: Run unit tests
+      code: |
+        ./mu-test
