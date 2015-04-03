@@ -13,4 +13,4 @@
 
 #include "path_tests.h"
 
-// https://github.com/philsquared/Catch/blob/master/docs/tutorial.md 
+// https://github.com/philsquared/Catch/blob/master/docs/tutorial.md

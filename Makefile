@@ -12,7 +12,8 @@ endif
 program_NAME := mu-test
 program_SRCS := $(shell find test -type f -name '*.cpp')
 program_OBJS := ${program_SRCS:.cpp=.o}
-program_INCLUDE_DIRS := include thirdparty/catch
+program_DEPS := ${program_OBJS:.o=.dep}
+program_INCLUDE_DIRS := include external/catch
 program_LIBRARY_DIRS :=
 program_LIBRARIES :=
 
@@ -34,11 +35,18 @@ include .depend
 
 all: $(program_NAME)
 
+-include $(program_DEPS)
+
+%.o: %.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MM -MT $@ -MF $(patsubst %.o,%.dep,$@) $<
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+
 $(program_NAME): $(program_OBJS)
 	$(LINK.cc) $(program_OBJS) -o $(program_NAME)
 
 clean:
 	@- $(RM) $(program_NAME)
 	@- $(RM) $(program_OBJS)
+	@- $(RM) .depend
 
 distclean: clean
