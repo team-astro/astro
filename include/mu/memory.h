@@ -47,8 +47,8 @@ namespace mu
   inline void*
   push_size(memory_pool *pool, uintptr size)
   {
-    assert(pool);
-    assert((pool->used + size) <= pool->size);
+    mu_assert(pool);
+    mu_assert((pool->used + size) <= pool->size);
 
     void* result = pool->base + pool->used;
     pool->used += size;
@@ -59,8 +59,8 @@ namespace mu
   inline void
   pop_size(memory_pool* pool, uintptr size)
   {
-    assert(pool);
-    assert(pool->used >= size);
+    mu_assert(pool);
+    mu_assert(pool->used >= size);
 
     pool->used -= size;
   }
@@ -82,7 +82,7 @@ namespace mu
   inline void
   push_pool(memory_pool* pool, memory_pool* parent, uintptr size)
   {
-    assert(pool);
+    mu_assert(pool);
 
     *pool = {};
     pool->base = (uint8*)push_size(parent, size);
@@ -119,11 +119,11 @@ namespace mu
   inline void
   pop_pool(memory_pool* pool)
   {
-    assert(pool);
-    assert(pool->parent);
+    mu_assert(pool);
+    mu_assert(pool->parent);
 
     // Ensure the parent pool has not allocated memory on the other side of this one.
-    assert(pool->parent->base + (pool->parent->used - pool->size) == pool->base);
+    mu_assert(pool->parent->base + (pool->parent->used - pool->size) == pool->base);
 
     pop_size(pool->parent, pool->size);
   }

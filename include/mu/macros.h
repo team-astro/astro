@@ -108,13 +108,13 @@
 #endif
 
 #if MU_ASSERTIONS_ENABLED
-# define assert(expression)                                                    \
+# define mu_assert(expression)                                                    \
   if (!(expression))                                                           \
   {                                                                            \
     MU_DEBUG_BREAK;                                                            \
   }
 #else
-# define assert(expression)
+# define mu_assert(expression)
 #endif
 
 // #define MU_STATIC_ASSERT(_condition, ...) static_assert(_condition, "" __VA_ARGS__)
