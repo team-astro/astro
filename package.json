@@ -1,9 +1,9 @@
 {
-  "name": "core",
+  "name": "astro",
   "version": "0.0.1",
-  "repo": "team-astro/core",
+  "repo": "team-astro/astro",
   "description": "Base platform library",
-  "keywords": ["platform", "header-only"],
+  "keywords": ["platform"],
   "license": "MIT",
   "src": [
     "include/astro/astro.h",
