@@ -2,5 +2,5 @@
 *.a
 *.lib
 *.dep
-mu-test
+astro-test
 build

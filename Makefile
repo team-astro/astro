@@ -11,7 +11,7 @@ else
 	OS=windows
 endif
 
-program_NAME := mu-test
+program_NAME := astro-test
 program_SRCS := $(shell find test -type f -name '*.cpp')
 program_OBJS := ${program_SRCS:.cpp=.o}
 program_DEPS := ${program_OBJS:.o=.dep}
@@ -50,6 +50,6 @@ $(program_NAME): $(program_OBJS)
 clean:
 	@- $(RM) $(program_NAME)
 	@- $(RM) $(program_OBJS)
-	@- $(RM) .depend
+	@- $(RM) $(shell find test -type f -name '*.dep')
 
 distclean: clean

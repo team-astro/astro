@@ -6,4 +6,4 @@ build:
             code: make
         - script:
             name: Run unit tests
-            code: ./mu-test
+            code: ./astro-test

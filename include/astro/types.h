@@ -2,12 +2,12 @@
 * Copyright 2015 Matt Rudder. All rights reserved.
 */
 
-#ifndef MU_TYPES
-#define MU_TYPES
+#ifndef ASTRO_TYPES
+#define ASTRO_TYPES
 
-#include <mu/platform.h>
+#include <astro/platform.h>
 
-#if MU_COMPILER_MSVC || MU_COMPILER_MSVC_COMPATIBLE
+#if ASTRO_COMPILER_MSVC || ASTRO_COMPILER_MSVC_COMPATIBLE
 #include <intrin.h>
 #else
 #include <immintrin.h>

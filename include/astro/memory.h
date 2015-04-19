@@ -2,13 +2,13 @@
 * Copyright 2015 Matt Rudder. All rights reserved.
 */
 
-#ifndef MU_MEMORY
-#define MU_MEMORY
+#ifndef ASTRO_MEMORY
+#define ASTRO_MEMORY
 
-#include "mu.h"
+#include "astro.h"
 #include <string.h>
 
-namespace mu
+namespace astro
 {
   struct memory_pool
   {
@@ -47,8 +47,8 @@ namespace mu
   inline void*
   push_size(memory_pool *pool, uintptr size)
   {
-    mu_assert(pool);
-    mu_assert((pool->used + size) <= pool->size);
+    astro_assert(pool);
+    astro_assert((pool->used + size) <= pool->size);
 
     void* result = pool->base + pool->used;
     pool->used += size;
@@ -59,8 +59,8 @@ namespace mu
   inline void
   pop_size(memory_pool* pool, uintptr size)
   {
-    mu_assert(pool);
-    mu_assert(pool->used >= size);
+    astro_assert(pool);
+    astro_assert(pool->used >= size);
 
     pool->used -= size;
   }
@@ -82,7 +82,7 @@ namespace mu
   inline void
   push_pool(memory_pool* pool, memory_pool* parent, uintptr size)
   {
-    mu_assert(pool);
+    astro_assert(pool);
 
     *pool = {};
     pool->base = (uint8*)push_size(parent, size);
@@ -119,16 +119,16 @@ namespace mu
   inline void
   pop_pool(memory_pool* pool)
   {
-    mu_assert(pool);
-    mu_assert(pool->parent);
+    astro_assert(pool);
+    astro_assert(pool->parent);
 
     // Ensure the parent pool has not allocated memory on the other side of this one.
-    mu_assert(pool->parent->base + (pool->parent->used - pool->size) == pool->base);
+    astro_assert(pool->parent->base + (pool->parent->used - pool->size) == pool->base);
 
     pop_size(pool->parent, pool->size);
   }
 
-#if defined(MU_IMPLEMENTATION)
+#if defined(ASTRO_IMPLEMENTATION)
 void
 initialize_memory_pool(memory_pool *pool, uintptr size, uint8 *base)
 {

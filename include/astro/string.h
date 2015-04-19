@@ -5,10 +5,10 @@
 #ifndef STRING_H
 #define STRING_H
 
-#include "mu.h"
+#include "astro.h"
 #include <string.h>
 
-namespace mu
+namespace astro
 {
   /*
    * Copyright (c) 1998 Todd C. Miller <Todd.Miller@courtesan.com>

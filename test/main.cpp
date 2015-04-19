@@ -4,10 +4,10 @@
 
 #include <stdio.h>
 
-#define MU_IMPLEMENTATION
-#include <mu/mu.h>
-#include <mu/memory.h>
-#include <mu/io/path.h>
+#define ASTRO_IMPLEMENTATION
+#include <astro/astro.h>
+#include <astro/memory.h>
+#include <astro/io/path.h>
 
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>

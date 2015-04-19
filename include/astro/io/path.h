@@ -5,11 +5,11 @@
 #ifndef IO_PATH_H
 #define IO_PATH_H
 
-#include <mu/mu.h>
-#include <mu/string.h>
+#include <astro/astro.h>
+#include <astro/string.h>
 #include <stdarg.h>
 
-namespace mu { namespace io { namespace path
+namespace astro { namespace io { namespace path
 {
   extern const char* volume_separator;
   extern const char* path_separator;
@@ -112,8 +112,8 @@ namespace mu { namespace io { namespace path
     return dst;
   }
 
-#if defined(MU_IMPLEMENTATION)
-# if MU_PLATFORM_WIN32 || MU_PLATFORM_WINRT
+#if defined(ASTRO_IMPLEMENTATION)
+# if ASTRO_PLATFORM_WIN32 || ASTRO_PLATFORM_WINRT
   const char* volume_separator = ":";
   const char* path_separator = ";";
   const char* dir_separator = "\\";
