@@ -1,5 +1,5 @@
-core
-====
+Astro Core
+==========
 
 Base platform library
 
