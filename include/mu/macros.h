@@ -243,4 +243,9 @@
 # define MU_WARN(_condition, ...) MU_NOOP()
 #endif // MU_CHECK
 
+#define mu_kilobytes(value) ((value)*1024LL)
+#define mu_megabytes(value) (mu_kilobytes(value) * 1024LL)
+#define mu_gigabytes(value) (mu_megabytes(value) * 1024LL)
+#define mu_terabytes(value) (mu_gigabytes(value) * 1024LL)
+
 #endif
