@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Matt Rudder. All rights reserved.
+* Copyright 2015 Team Astro. All rights reserved.
 */
 
 #ifndef ASTRO_MEMORY
@@ -19,7 +19,13 @@ namespace astro
     void (*on_dispose)();
   };
 
-  void initialize_memory_pool(memory_pool *pool, uintptr size, uint8 *base);
+  inline void
+  initialize_memory_pool(memory_pool *pool, uintptr size, uint8 *base)
+  {
+    pool->size = size;
+    pool->base = base;
+    pool->used = 0;
+  }
 
   // TODO(matt): Throughly test this. This could be a really bad idea...
   template <typename t>
@@ -127,16 +133,6 @@ namespace astro
 
     pop_size(pool->parent, pool->size);
   }
-
-#if defined(ASTRO_IMPLEMENTATION)
-void
-initialize_memory_pool(memory_pool *pool, uintptr size, uint8 *base)
-{
-  pool->size = size;
-  pool->base = base;
-  pool->used = 0;
-}
-#endif
 }
 
 #endif

@@ -1,9 +1,0 @@
-box: dirkvdb/cxx14@0.1.0
-build:
-    steps:
-        - script:
-            name: Build unit tests
-            code: make
-        - script:
-            name: Run unit tests
-            code: ./astro-test

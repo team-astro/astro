@@ -2,5 +2,4 @@
 *.a
 *.lib
 *.dep
-astro-test
 build

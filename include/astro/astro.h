@@ -1,5 +1,5 @@
 /**
-* Copyright 2015 Matt Rudder. All rights reserved.
+* Copyright 2015 Team Astro. All rights reserved.
 */
 
 #ifndef ASTRO_H
