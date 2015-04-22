@@ -17,7 +17,7 @@ namespace astro
 
     char* result = nullptr;
     size_t len = strlen(str);
-    result = allocator.allocate(len + 1);
+    result = (char*) allocator.allocate(len + 1);
     strncpy(result, str, len);
     result[len] = '\0';
 

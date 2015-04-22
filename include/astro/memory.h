@@ -21,14 +21,28 @@ namespace astro
     dealloc_fun_t deallocate;
     dispose_fun_t dispose;
 
-    allocator(alloc_fun_t alloc = ::malloc, dealloc_fun_t dealloc = ::free, dispose_fun_t dispose = []{})
+    allocator(
+      alloc_fun_t alloc, dealloc_fun_t dealloc,
+      dispose_fun_t dispose = []{})
       : allocate(alloc)
       , deallocate(dealloc)
       , dispose(dispose)
     {
     }
-    allocator(allocator const&) = delete;
-    allocator& operator=(allocator const&) = delete;
+
+    allocator(allocator const& rv)
+    {
+      *this = rv;
+    }
+
+    allocator& operator=(allocator const& rv)
+    {
+      this->allocate = rv.allocate;
+      this->deallocate = rv.deallocate;
+      this->dispose = rv.dispose;
+
+      return *this;
+    }
 
     allocator(allocator&& rv)
     {
