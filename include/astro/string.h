@@ -6,10 +6,24 @@
 #define STRING_H
 
 #include "astro.h"
+#include "memory.h"
 #include <string.h>
 
 namespace astro
 {
+  inline char* strdup(const char* str, allocator allocator = allocator::malloc())
+  {
+    if (str == nullptr) return nullptr;
+
+    char* result = nullptr;
+    size_t len = strlen(str);
+    result = allocator.allocate(len + 1);
+    strncpy(result, str, len);
+    result[len] = '\0';
+
+    return result;
+  }
+
   /*
    * Copyright (c) 1998 Todd C. Miller <Todd.Miller@courtesan.com>
    *

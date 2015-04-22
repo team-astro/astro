@@ -7,9 +7,49 @@
 
 #include "astro.h"
 #include <string.h>
+#include <functional>
 
 namespace astro
 {
+  struct allocator
+  {
+    typedef std::function<void*(uintptr)> alloc_fun_t;
+    typedef std::function<void(uint8*)> dealloc_fun_t;
+    typedef std::function<void()> dispose_fun_t;
+
+    alloc_fun_t allocate;
+    dealloc_fun_t deallocate;
+    dispose_fun_t dispose;
+
+    allocator(alloc_fun_t alloc = ::malloc, dealloc_fun_t dealloc = ::free, dispose_fun_t dispose = []{})
+      : allocate(alloc)
+      , deallocate(dealloc)
+      , dispose(dispose)
+    {
+    }
+    allocator(allocator const&) = delete;
+    allocator& operator=(allocator const&) = delete;
+
+    allocator(allocator&& rv)
+    {
+       this->allocate.swap(rv.allocate);
+       this->deallocate.swap(rv.deallocate);
+       this->dispose.swap(rv.dispose);
+    };
+
+    ~allocator()
+    {
+      this->dispose();
+    }
+
+    static allocator malloc();
+  };
+
+  allocator allocator::malloc()
+  {
+    return allocator(::malloc, ::free);
+  }
+
   struct memory_pool
   {
     uintptr size;
@@ -85,21 +125,29 @@ namespace astro
     return (t *) push_size(pool, sizeof(t) * count);
   }
 
-  inline void
-  push_pool(memory_pool* pool, memory_pool* parent, uintptr size)
+  inline memory_pool*
+  push_pool(memory_pool* pool, uintptr size)
   {
-    astro_assert(pool);
+    uintptr size_left = pool->size - pool->used;
+    uintptr header_size = sizeof(memory_pool);
+    astro_assert(size_left > header_size + size);
 
-    *pool = {};
-    pool->base = (uint8*)push_size(parent, size);
-    pool->size = size;
-    pool->parent = parent;
+    uint8* base = (uint8*) push_size(pool, size + header_size);
+    memory_pool* result = (memory_pool*) base;
+    *result = {};
+    result->size = size;
+    result->base = base + header_size;
+    result->parent = pool;
+
+    return result;
   }
 
-  inline void
-  push_pool(memory_pool* pool, memory_pool* parent)
+  inline memory_pool*
+  push_pool(memory_pool* pool)
   {
-    push_pool(pool, parent, parent->size - parent->used);
+    uintptr size_left = pool->size - pool->used;
+    const uintptr header_size = sizeof(memory_pool);
+    return push_pool(pool, size_left - header_size);
   }
 
   inline char*
@@ -129,9 +177,20 @@ namespace astro
     astro_assert(pool->parent);
 
     // Ensure the parent pool has not allocated memory on the other side of this one.
-    astro_assert(pool->parent->base + (pool->parent->used - pool->size) == pool->base);
+    const uintptr header_size = sizeof(memory_pool);
+    astro_assert(pool->parent->base + (pool->parent->used - pool->size - header_size) == pool->base);
 
-    pop_size(pool->parent, pool->size);
+    pop_size(pool->parent, pool->size + header_size);
+  }
+
+  inline allocator memory_pool_allocator(memory_pool* pool, uintptr size)
+  {
+    memory_pool* child = push_pool(pool, size);
+    return allocator
+    (
+      [child](uintptr size){ return push_size(child, size); },
+      [child](uint8* ptr) { /* TODO: Cleanup. :) */ }
+    );
   }
 }
 
