@@ -21,6 +21,11 @@ namespace astro
     dealloc_fun_t deallocate;
     dispose_fun_t dispose;
 
+    // TODO: Default allocator uses malloc. Might want to change that...
+    allocator() : allocate(::malloc), deallocate(::free), dispose([]{}) { }
+    allocator(std::nullptr_t) : allocate(::malloc), deallocate(::free), dispose([]{}) { }
+    allocator(void*) = delete;
+
     allocator(
       alloc_fun_t alloc, dealloc_fun_t dealloc,
       dispose_fun_t dispose = []{})
@@ -46,23 +51,24 @@ namespace astro
 
     allocator(allocator&& rv)
     {
-       this->allocate.swap(rv.allocate);
-       this->deallocate.swap(rv.deallocate);
-       this->dispose.swap(rv.dispose);
+      *this = std::move(rv);
     };
 
+    allocator& operator=(allocator&& rv)
+    {
+      this->allocate = std::move(rv.allocate);
+      this->deallocate = std::move(rv.deallocate);
+      this->dispose = std::move(rv.dispose);
+
+      return *this;
+    }
+
+    // allow for scope-based cleanup.
     ~allocator()
     {
       this->dispose();
     }
-
-    static allocator malloc();
   };
-
-  allocator allocator::malloc()
-  {
-    return allocator(::malloc, ::free);
-  }
 
   struct memory_pool
   {

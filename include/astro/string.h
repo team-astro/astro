@@ -11,7 +11,7 @@
 
 namespace astro
 {
-  inline char* strdup(const char* str, allocator allocator = allocator::malloc())
+  inline char* strdup(const char* str, allocator allocator = nullptr)
   {
     if (str == nullptr) return nullptr;
 
