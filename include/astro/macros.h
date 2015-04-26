@@ -243,9 +243,9 @@
 # define ASTRO_WARN(_condition, ...) ASTRO_NOOP()
 #endif // ASTRO_CHECK
 
-#define astro_kilobytes(value) ((value)*1024LL)
-#define astro_megabytes(value) (astro_kilobytes(value) * 1024LL)
-#define astro_gigabytes(value) (astro_megabytes(value) * 1024LL)
-#define astro_terabytes(value) (astro_gigabytes(value) * 1024LL)
+#define ASTRO_KB(value) ((value)*1024LL)
+#define ASTRO_MB(value) (astro_kilobytes(value) * 1024LL)
+#define ASTRO_GB(value) (astro_megabytes(value) * 1024LL)
+#define ASTRO_TB(value) (astro_gigabytes(value) * 1024LL)
 
 #endif
