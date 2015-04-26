@@ -3,3 +3,4 @@
 *.lib
 *.dep
 build
+astro-tests

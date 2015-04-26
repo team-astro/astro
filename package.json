@@ -5,13 +5,7 @@
   "description": "Base platform library",
   "keywords": ["platform"],
   "license": "MIT",
-  "src": [
-    "include/astro/astro.h",
-    "include/astro/config.h",
-    "include/astro/macros.h",
-    "include/astro/memory.h",
-    "include/astro/platform.h",
-    "include/astro/string.h",
-    "include/astro/types.h"
-  ]
+  "development": {
+    "silentbicycle/greatest": "*"
+  }
 }
