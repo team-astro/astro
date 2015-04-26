@@ -32,7 +32,7 @@ LDFLAGS += $(foreach lib,$(program_LIBRARIES),-l$(lib))
 
 .PHONY: all clean distclean
 
-all: $(program_NAME)
+all: generate_linter_flags $(program_NAME) 
 
 -include $(program_DEPS)
 
@@ -46,6 +46,9 @@ all: $(program_NAME)
 
 $(program_NAME): $(program_OBJS)
 	$(LINK.cc) $(program_OBJS) -o $(program_NAME)
+
+generate_linter_flags: Makefile
+	echo "$(CXXFLAGS)" | tr ' ' '\n' > .linter-clang-flags
 
 clean:
 	@- $(RM) $(program_NAME)

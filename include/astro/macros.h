@@ -244,8 +244,8 @@
 #endif // ASTRO_CHECK
 
 #define ASTRO_KB(value) ((value)*1024LL)
-#define ASTRO_MB(value) (astro_kilobytes(value) * 1024LL)
-#define ASTRO_GB(value) (astro_megabytes(value) * 1024LL)
-#define ASTRO_TB(value) (astro_gigabytes(value) * 1024LL)
+#define ASTRO_MB(value) (ASTRO_KB(value) * 1024LL)
+#define ASTRO_GB(value) (ASTRO_MB(value) * 1024LL)
+#define ASTRO_TB(value) (ASTRO_GB(value) * 1024LL)
 
 #endif
