@@ -12,74 +12,74 @@
 
 namespace astro
 {
-  struct memory_pool
+  struct memory_stack
   {
     uintptr size;
     uintptr used;
     uint8* base;
     void* last;
-    memory_pool* parent;
+    memory_stack* parent;
   };
 
   inline void
-  initialize_memory_pool(memory_pool *pool, uintptr size, uint8 *base)
+  initialize_memory_stack(memory_stack * stack, uintptr size, uint8 *base)
   {
-    pool->size = size;
-    pool->base = base;
-    pool->used = 0;
+    stack->size = size;
+    stack->base = base;
+    stack->used = 0;
   }
 
   // TODO(matt): Throughly test this. This could be a really bad idea...
   template <typename t>
   inline t *
-  convert_ptr_to_offset(memory_pool *pool, t * address)
+  convert_ptr_to_offset(memory_stack * stack, t * address)
   {
     if (!address) return address;
 
     uint8* a = (uint8*) address;
-    intptr d = a - pool->base;
+    intptr d = a - stack->base;
     return (t *) d;
   }
 
   template <typename t>
   inline t *
-  convert_offset_to_ptr(memory_pool *pool, t * address)
+  convert_offset_to_ptr(memory_stack * stack, t * address)
   {
     if (!address) return address;
 
     intptr a = (intptr) address;
-    uint8* ptr = pool->base + a;
+    uint8* ptr = stack->base + a;
     return (t *) ptr;
   }
 
   inline void*
-  push_size(memory_pool *pool, uintptr size)
+  push_size(memory_stack * stack, uintptr size)
   {
-    astro_assert(pool);
-    astro_assert((pool->used + size) <= pool->size);
+    astro_assert(stack);
+    astro_assert((stack->used + size) <= stack->size);
 
-    void* result = pool->base + pool->used;
-    pool->used += size;
-    pool->last = result;
+    void* result = stack->base + stack->used;
+    stack->used += size;
+    stack->last = result;
 
     return result;
   }
 
   inline void
-  pop_size(memory_pool* pool, uintptr size)
+  pop_size(memory_stack* stack, uintptr size)
   {
-    astro_assert(pool);
-    astro_assert(pool->used >= size);
+    astro_assert(stack);
+    astro_assert(stack->used >= size);
 
-    pool->used -= size;
+    stack->used -= size;
   }
 
   inline bool
-  pop_value(memory_pool* pool, void* value, uintptr size)
+  pop_value(memory_stack* stack, void* value, uintptr size)
   {
-    if (pool->last == value)
+    if (stack->last == value)
     {
-      pop_size(pool, size);
+      pop_size(stack, size);
       return true;
     }
 
@@ -88,78 +88,78 @@ namespace astro
 
   template <typename t>
   inline t*
-  push_struct(memory_pool* pool)
+  push_struct(memory_stack* stack)
   {
-    return (t *) push_size(pool, sizeof(t));
+    return (t *) push_size(stack, sizeof(t));
   }
 
   template <typename t>
   inline bool32
-  pop_struct(memory_pool* pool, t* value)
+  pop_struct(memory_stack* stack, t* value)
   {
-    return pop_value(pool, (void*)value, sizeof(t));
+    return pop_value(stack, (void*)value, sizeof(t));
   }
 
   template <typename t>
   inline t*
-  push_array(memory_pool* pool, uintptr count)
+  push_array(memory_stack* stack, uintptr count)
   {
-    return (t *) push_size(pool, sizeof(t) * count);
+    return (t *) push_size(stack, sizeof(t) * count);
   }
 
   template <typename t>
   inline bool32
-  pop_array(memory_pool* pool, t* value, uintptr count)
+  pop_array(memory_stack* stack, t* value, uintptr count)
   {
-    return pop_value(pool, (void*)value, sizeof(t) * count);
+    return pop_value(stack, (void*)value, sizeof(t) * count);
   }
 
-  inline memory_pool*
-  push_pool(memory_pool* pool, uintptr size)
+  inline memory_stack*
+  push_stack(memory_stack* stack, uintptr size)
   {
-    uintptr size_left = pool->size - pool->used;
-    uintptr header_size = sizeof(memory_pool);
+    uintptr size_left = stack->size - stack->used;
+    uintptr header_size = sizeof(memory_stack);
     astro_assert(size_left > header_size + size);
 
-    uint8* base = (uint8*) push_size(pool, size + header_size);
-    memory_pool* result = (memory_pool*) base;
+    uint8* base = (uint8*) push_size(stack, size + header_size);
+    memory_stack* result = (memory_stack*) base;
     *result = {};
     result->size = size;
     result->base = base + header_size;
-    result->parent = pool;
+    result->parent = stack;
 
     return result;
   }
 
-  inline memory_pool*
-  push_pool(memory_pool* pool)
+  inline memory_stack*
+  push_stack(memory_stack* stack)
   {
-    uintptr size_left = pool->size - pool->used;
-    const uintptr header_size = sizeof(memory_pool);
-    return push_pool(pool, size_left - header_size);
+    uintptr size_left = stack->size - stack->used;
+    const uintptr header_size = sizeof(memory_stack);
+    return push_stack(stack, size_left - header_size);
   }
 
   inline char*
-  push_string(memory_pool *pool, const char* str)
+  push_string(memory_stack * stack, const char* str)
   {
     auto len = strlen(str);
-    char* dest = (char*) push_size(pool, len + 1);
+    char* dest = (char*) push_size(stack, len + 1);
     return strncpy(dest, str, len);
   }
 
   inline bool
-  pop_string(memory_pool* pool, const char* value)
+  pop_string(memory_stack* stack, const char* value)
   {
     auto len = strlen(value);
-    return pop_array<const char>(pool, value, len + 1);
+    return pop_array<const char>(stack, value, len + 1);
   }
 
   template <typename t>
   inline t*
-  push_list(memory_pool* pool, t** list)
+  push_list(memory_stack* stack, t** list)
   {
     t* temp = *list;
-    t* head = push_struct<t>(pool);
+    t* head = push_struct<t>(stack);
     head->next = temp;
     *list = head;
 
@@ -167,23 +167,23 @@ namespace astro
   }
 
   inline void
-  pop_pool(memory_pool* pool)
+  pop_pool(memory_stack* stack)
   {
-    astro_assert(pool);
-    astro_assert(pool->parent);
+    astro_assert(stack);
+    astro_assert(stack->parent);
 
-    // Ensure the parent pool has not allocated memory on the other side of this one.
-    const uintptr header_size = sizeof(memory_pool);
-    astro_assert(pool->parent->base + (pool->parent->used - pool->size - header_size) == pool->base);
+    // Ensure the parent stack has not allocated memory on the other side of this one.
+    const uintptr header_size = sizeof(memory_stack);
+    astro_assert(stack->parent->base + (stack->parent->used - stack->size - header_size) == stack->base);
 
-    pop_size(pool->parent, pool->size + header_size);
+    pop_size(stack->parent, stack->size + header_size);
   }
 
 
   template <typename T>
-  class memory_pool_allocator
+  class memory_stack_allocator
   {
-    memory_pool* m_pool;
+    memory_stack* m_stack;
 
   public:
     typedef T value_type;
@@ -196,22 +196,22 @@ namespace astro
     template <typename U>
     struct rebind
     {
-      typedef memory_pool_allocator<U> other;
+      typedef memory_stack_allocator<U> other;
     };
 
-    memory_pool_allocator(memory_pool* pool)
-      : m_pool(pool)
+    memory_stack_allocator(memory_stack* stack)
+      : m_stack(stack)
     {
     }
 
     pointer allocate(unsigned n)
     {
-      return reinterpret_cast<T *>(push_size(m_pool, sizeof(T) * n));
+      return reinterpret_cast<T *>(push_size(m_stack, sizeof(T) * n));
     }
 
     void deallocate(pointer p, unsigned n)
     {
-      pop_value(m_pool, p, sizeof(T) * n);
+      pop_value(m_stack, p, sizeof(T) * n);
     }
 
     void construct(pointer p, const_reference clone)
@@ -234,12 +234,12 @@ namespace astro
       return &x;
     }
 
-    bool operator==(const memory_pool_allocator &rhs)
+    bool operator==(const memory_stack_allocator &rhs)
     {
-        return true;
+        return this->m_stack == rhs.m_stack;
     }
 
-    bool operator!=(const memory_pool_allocator &rhs)
+    bool operator!=(const memory_stack_allocator &rhs)
     {
       return !operator==(rhs);
     }
