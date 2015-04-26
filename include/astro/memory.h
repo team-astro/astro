@@ -14,7 +14,7 @@ namespace astro
   struct allocator
   {
     typedef std::function<void*(uintptr)> alloc_fun_t;
-    typedef std::function<void(uint8*)> dealloc_fun_t;
+    typedef std::function<void(void*)> dealloc_fun_t;
     typedef std::function<void()> dispose_fun_t;
 
     alloc_fun_t allocate;
@@ -209,7 +209,7 @@ namespace astro
     return allocator
     (
       [child](uintptr size){ return push_size(child, size); },
-      [child](uint8* ptr) { /* TODO: Cleanup. :) */ }
+      [child](void* ptr) { /* TODO: Cleanup. :) */ }
     );
   }
 }
