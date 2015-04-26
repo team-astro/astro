@@ -6,77 +6,19 @@
 #define ASTRO_MEMORY
 
 #include "astro.h"
-#include <string.h>
+#include <memory>
+#include <cstring>
 #include <functional>
 
 namespace astro
 {
-  struct allocator
-  {
-    typedef std::function<void*(uintptr)> alloc_fun_t;
-    typedef std::function<void(void*)> dealloc_fun_t;
-    typedef std::function<void()> dispose_fun_t;
-
-    alloc_fun_t allocate;
-    dealloc_fun_t deallocate;
-    dispose_fun_t dispose;
-
-    // TODO: Default allocator uses malloc. Might want to change that...
-    allocator() : allocate(::malloc), deallocate(::free), dispose([]{}) { }
-    allocator(std::nullptr_t) : allocate(::malloc), deallocate(::free), dispose([]{}) { }
-    allocator(void*) = delete;
-
-    allocator(
-      alloc_fun_t alloc, dealloc_fun_t dealloc,
-      dispose_fun_t dispose = []{})
-      : allocate(alloc)
-      , deallocate(dealloc)
-      , dispose(dispose)
-    {
-    }
-
-    allocator(allocator const& rv)
-    {
-      *this = rv;
-    }
-
-    allocator& operator=(allocator const& rv)
-    {
-      this->allocate = rv.allocate;
-      this->deallocate = rv.deallocate;
-      this->dispose = rv.dispose;
-
-      return *this;
-    }
-
-    allocator(allocator&& rv)
-    {
-      *this = std::move(rv);
-    };
-
-    allocator& operator=(allocator&& rv)
-    {
-      this->allocate = std::move(rv.allocate);
-      this->deallocate = std::move(rv.deallocate);
-      this->dispose = std::move(rv.dispose);
-
-      return *this;
-    }
-
-    // allow for scope-based cleanup.
-    ~allocator()
-    {
-      this->dispose();
-    }
-  };
-
   struct memory_pool
   {
     uintptr size;
     uintptr used;
     uint8* base;
+    void* last;
     memory_pool* parent;
-    void (*on_dispose)();
   };
 
   inline void
@@ -118,6 +60,7 @@ namespace astro
 
     void* result = pool->base + pool->used;
     pool->used += size;
+    pool->last = result;
 
     return result;
   }
@@ -131,6 +74,18 @@ namespace astro
     pool->used -= size;
   }
 
+  inline bool
+  pop_value(memory_pool* pool, void* value, uintptr size)
+  {
+    if (pool->last == value)
+    {
+      pop_size(pool, size);
+      return true;
+    }
+
+    return false;
+  }
+
   template <typename t>
   inline t*
   push_struct(memory_pool* pool)
@@ -139,10 +94,24 @@ namespace astro
   }
 
   template <typename t>
+  inline bool32
+  pop_struct(memory_pool* pool, t* value)
+  {
+    return pop_value(pool, (void*)value, sizeof(t));
+  }
+
+  template <typename t>
   inline t*
   push_array(memory_pool* pool, uintptr count)
   {
     return (t *) push_size(pool, sizeof(t) * count);
+  }
+
+  template <typename t>
+  inline bool32
+  pop_array(memory_pool* pool, t* value, uintptr count)
+  {
+    return pop_value(pool, (void*)value, sizeof(t) * count);
   }
 
   inline memory_pool*
@@ -178,6 +147,13 @@ namespace astro
     return strncpy(dest, str, len);
   }
 
+  inline bool
+  pop_string(memory_pool* pool, const char* value)
+  {
+    auto len = strlen(value);
+    return pop_array<const char>(pool, value, len + 1);
+  }
+
   template <typename t>
   inline t*
   push_list(memory_pool* pool, t** list)
@@ -203,15 +179,74 @@ namespace astro
     pop_size(pool->parent, pool->size + header_size);
   }
 
-  inline allocator memory_pool_allocator(memory_pool* pool, uintptr size)
+
+  template <typename T>
+  class memory_pool_allocator
   {
-    memory_pool* child = push_pool(pool, size);
-    return allocator
-    (
-      [child](uintptr size){ return push_size(child, size); },
-      [child](void* ptr) { /* TODO: Cleanup. :) */ }
-    );
-  }
+    memory_pool* m_pool;
+
+  public:
+    typedef T value_type;
+    typedef T *pointer;
+    typedef T &reference;
+    typedef const T *const_pointer;
+    typedef const T &const_reference;
+    typedef unsigned size_type;
+    typedef unsigned difference_type;
+    template <typename U>
+    struct rebind
+    {
+      typedef memory_pool_allocator<U> other;
+    };
+
+    memory_pool_allocator(memory_pool* pool)
+      : m_pool(pool)
+    {
+    }
+
+    pointer allocate(unsigned n)
+    {
+      return reinterpret_cast<T *>(push_size(m_pool, sizeof(T) * n));
+    }
+
+    void deallocate(pointer p, unsigned n)
+    {
+      pop_value(m_pool, p, sizeof(T) * n);
+    }
+
+    void construct(pointer p, const_reference clone)
+    {
+      new (p) T(clone);
+    }
+
+    void destroy(pointer p)
+    {
+      p->~T();
+    }
+
+    pointer address(reference x) const
+    {
+      return &x;
+    }
+
+    const_pointer address(const_reference x) const
+    {
+      return &x;
+    }
+
+    bool operator==(const memory_pool_allocator &rhs)
+    {
+        return true;
+    }
+
+    bool operator!=(const memory_pool_allocator &rhs)
+    {
+      return !operator==(rhs);
+    }
+  };
+
+  // TODO: Better default allocator.
+  template <typename T> using allocator = std::allocator<T>;
 }
 
 #endif
