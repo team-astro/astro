@@ -7,6 +7,7 @@
 
 #include <cstdint> // uint32_t
 #include <cstdlib> // size_t
+#include <algorithm>
 
 #include "config.h"
 #include "macros.h"

@@ -8,6 +8,7 @@
 #include "astro.h"
 #include "memory.h"
 #include <cstring>
+#include <cstdarg>
 
 namespace astro
 {
@@ -21,6 +22,26 @@ namespace astro
     result = (char*) allocator.allocate(len + 1);
     strncpy(result, str, len);
     result[len] = '\0';
+
+    return result;
+  }
+
+  // Allocate a new string with the correct length needed to
+  // print the provided arguments.
+  template <typename Allocator = allocator<char>>
+  inline char* saprintf(const char* fmt, Allocator allocator, ...)
+  {
+    va_list lst;
+    va_start(lst, allocator);
+    va_list lst_copy;
+    va_copy(lst_copy, lst);
+
+    int size = vsnprintf(nullptr, 0, fmt, lst) + 1;
+    va_end(lst);
+
+    char* result = allocator.allocat(size);
+    vsnprintf(result, size, fmt, lst_copy);
+    va_end(lst_copy);
 
     return result;
   }

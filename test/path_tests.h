@@ -2,6 +2,8 @@
 * Copyright 2015 Team Astro. All rights reserved.
 */
 
+#include <astro/io/path.h>
+
 using namespace astro;
 using namespace astro::io;
 
