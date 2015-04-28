@@ -6,8 +6,8 @@
 #define ASTRO_LOGGING
 
 #include <cstdio>
-#include <errno.h>
 #include <cstring>
+#include <errno.h>
 
 namespace astro
 {

@@ -29,7 +29,7 @@ namespace astro
   // Allocate a new string with the correct length needed to
   // print the provided arguments.
   template <typename Allocator = allocator<char>>
-  inline char* saprintf(const char* fmt, Allocator allocator, ...)
+  inline const char* saprintf(const char* fmt, Allocator allocator, ...)
   {
     va_list lst;
     va_start(lst, allocator);
@@ -39,7 +39,7 @@ namespace astro
     int size = vsnprintf(nullptr, 0, fmt, lst) + 1;
     va_end(lst);
 
-    char* result = allocator.allocat(size);
+    char* result = allocator.allocate(size);
     vsnprintf(result, size, fmt, lst_copy);
     va_end(lst_copy);
 
@@ -137,6 +137,7 @@ namespace astro
 
     return(dlen + (s - src)); /* count does not include NUL */
   }
+
 }
 
 #endif
