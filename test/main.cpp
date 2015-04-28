@@ -7,6 +7,9 @@
 #define ASTRO_IMPLEMENTATION
 #include <astro/astro.h>
 #include <astro/memory.h>
+#include <astro/logging.h>
+
+astro::log_level astro_log_verbosity = astro::log_level::debug;
 
 #include <greatest/greatest.h>
 GREATEST_MAIN_DEFS();
@@ -14,6 +17,7 @@ GREATEST_MAIN_DEFS();
 #include "path_tests.h"
 #include "socket_tests.h"
 #include "ip_address_tests.h"
+#include "dns_tests.h"
 
 int main(int argc, char **argv)
 {
@@ -21,5 +25,6 @@ int main(int argc, char **argv)
   RUN_SUITE(path_tests);
   RUN_SUITE(socket_tests);
   RUN_SUITE(ip_address_tests);
+  RUN_SUITE(dns_tests);
   GREATEST_MAIN_END();        /* display results */
 }

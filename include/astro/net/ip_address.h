@@ -162,14 +162,14 @@ namespace astro { namespace net
   }
 
   inline ip_address
-  parse_ip_address(const char** ip, uint16* port = nullptr)
+  parse_ip_address(const char* ip, uint16* port = nullptr)
   {
     ip_address result = {};
-    const char* firstColon = strchr(*ip, ':');
-    const char* firstDot = strchr(*ip, '.');
-    const char* openBracket = strchr(*ip, '[');
+    const char* firstColon = strchr(ip, ':');
+    const char* firstDot = strchr(ip, '.');
+    const char* openBracket = strchr(ip, '[');
     const char* closeBracket = nullptr;
-    const char* ipLocal = *ip;
+    const char* ipLocal = ip;
 
     bool32 isIPv6Local = openBracket != nullptr || firstDot == nullptr ||
       (firstColon != nullptr && (firstDot == nullptr || firstColon < firstDot));
@@ -225,7 +225,7 @@ namespace astro { namespace net
           if (*ipLocal == '.') // internal ipv4
           {
             const char* localCursor = cursor;
-            ip_address ip_local = parse_ip_address(&localCursor);
+            ip_address ip_local = parse_ip_address(localCursor);
 
             if (ip_local.family != ip_family::inter_network)
               return {};

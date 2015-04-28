@@ -23,7 +23,7 @@ TEST ipv4_addresses_roundtrip_correctly() {
     std::tie(test_string, test_ip, test_port) = addr;
 
     uint16 result_port;
-    ip_address result_ip = parse_ip_address(&test_string, &result_port);
+    ip_address result_ip = parse_ip_address(test_string, &result_port);
     const char* result_string = ip_address_to_string(&result_ip, result_port);
 
     ASSERT_EQ(test_ip, result_ip);
@@ -52,7 +52,7 @@ TEST ipv6_addresses_roundtrip_correctly() {
     std::tie(test_string, test_ip, test_port) = addr;
 
     uint16 result_port;
-    ip_address result_ip = parse_ip_address(&test_string, &result_port);
+    ip_address result_ip = parse_ip_address(test_string, &result_port);
     const char* result_string = ip_address_to_string(&result_ip, result_port);
 
     ASSERT_EQ(test_ip, result_ip);

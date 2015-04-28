@@ -7,28 +7,25 @@
 
 #include <astro/astro.h>
 #include <astro/string.h>
-#include "ip_address.h"
+
 #include <tuple>
+#include <future>
+
+#include "ip_address.h"
 
 namespace astro { namespace net
 {
-  struct ip_address
-  {
-
-  };
-
   namespace dns
   {
-    static std::promise<std::tuple<ip_address*, uintptr>>
+    std::future<ip_address>
     resolve_host_name(const char* path);
   }
 }}
 
-
 #if ASTRO_PLATFORM_POSIX
-#include "posix/file.inl"
+#include "posix/dns.inl"
 #else
-#error "astro::io::file not implemented."
+#error "astro::net::dns not implemented."
 #endif
 
 #endif
