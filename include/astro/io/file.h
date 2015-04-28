@@ -21,10 +21,12 @@ namespace astro { namespace io
 }}
 
 
+#ifdef ASTRO_IMPLEMENTATION
 #if ASTRO_PLATFORM_POSIX
 #include "posix/file.inl"
 #else
 #error "astro::io::file not implemented."
+#endif
 #endif
 
 #endif

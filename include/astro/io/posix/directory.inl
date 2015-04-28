@@ -11,4 +11,4 @@ namespace astro { namespace io
     struct stat s;
     return stat(path, &s) == 0 && S_ISDIR(s.st_mode);
   }
-}}}
+}}

@@ -8,6 +8,13 @@
 #include <astro/astro.h>
 #include <astro/memory.h>
 #include <astro/logging.h>
+#include <astro/io/directory.h>
+#include <astro/io/file.h>
+#include <astro/io/path.h>
+#include <astro/net/dns.h>
+#include <astro/net/ip_address.h>
+#include <astro/net/socket.h>
+#undef ASTRO_IMPLEMENTATION
 
 astro::log_level astro_log_verbosity = astro::log_level::debug;
 

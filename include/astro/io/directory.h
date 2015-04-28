@@ -14,13 +14,15 @@ namespace astro { namespace io
   struct directory
   {
     static bool exists(const char* path);
-  }
+  };
 }}
 
+#ifdef ASTRO_IMPLEMENTATION
 #if ASTRO_PLATFORM_POSIX
 #include "posix/directory.inl"
 #else
 #error "astro::io::directory not implemented."
+#endif
 #endif
 
 #endif
