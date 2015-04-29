@@ -51,7 +51,16 @@ namespace astro { namespace net
     spxii = 1257,
   };
 
-  struct socket;
+  struct socket
+  {
+    int socket;
+    socket_type type;
+    bool32 is_bound;
+    bool32 is_listening;
+    bool32 is_connected;
+    ip_address ip;
+    uint16 port;
+  };
 
   // TODO: Implement non-blocking API.
 

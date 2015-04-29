@@ -6,18 +6,6 @@
 
 namespace astro { namespace net
 {
-  struct socket
-  {
-    int socket;
-    socket_type type;
-    bool32 is_bound;
-    bool32 is_listening;
-    bool32 is_connected;
-    ip_address ip;
-    uint16 port;
-
-  };
-
   static char s_hostname[256];
 
   void *get_in_addr(struct sockaddr *sa)
@@ -97,7 +85,7 @@ namespace astro { namespace net
           result = false;
         }
       }
-      
+
       freeaddrinfo(res);
     }
 
@@ -160,13 +148,14 @@ namespace astro { namespace net
         result = false;
       }
     }
-    
+
     freeaddrinfo(res);
 
     if (result)
     {
       s->ip = ip;
       s->port = port;
+      s->is_connected = true;
     }
 
     return result;
@@ -188,6 +177,7 @@ namespace astro { namespace net
       }
 
       result.socket = conn;
+      result.is_connected = true;
       address_family family = (address_family) ss.ss_family;
       switch (family)
       {
