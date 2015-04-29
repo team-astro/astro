@@ -2,13 +2,14 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
 namespace astro { namespace net
 {
   struct socket
   {
     int socket;
-    struct addrinfo* info;
+    socket_type type;
     bool32 is_bound;
     bool32 is_listening;
     bool32 is_connected;
@@ -19,6 +20,27 @@ namespace astro { namespace net
 
   static char s_hostname[256];
 
+  void *get_in_addr(struct sockaddr *sa)
+  {
+    if (sa->sa_family == AF_INET) {
+      return &(((struct sockaddr_in*)sa)->sin_addr);
+    }
+
+    return &(((struct sockaddr_in6*)sa)->sin6_addr);
+  }
+
+  void set_addr_port(struct sockaddr *sa, uint16 port)
+  {
+    if (sa->sa_family == AF_INET)
+    {
+      ((struct sockaddr_in*)sa)->sin_port = htonl(port);
+    }
+    else
+    {
+      ((struct sockaddr_in6*)sa)->sin6_port = htonl(port);
+    }
+  }
+
   socket
   socket_create(address_family family, socket_type type, protocol_type protocol)
   {
@@ -28,26 +50,12 @@ namespace astro { namespace net
       {
         log_error("Error retrieving hostname");
       }
-      else
-      {
-        log_debug("Hostname: %s", s_hostname);
-      }
     }
 
     socket result = {};
-
-    struct addrinfo hints = {};
-    hints.ai_family = (int)family;
-    hints.ai_socktype = (int)type;
-    if (getaddrinfo(s_hostname, nullptr, &hints, &result.info) < 0)
-    {
-      log_error("Error calling getaddrinfo.");
-    }
-    else
-    {
-      result.ip.family = family;
-      result.socket = ::socket((int)family, (int)type, (int)protocol);
-    }
+    result.ip.family = family;
+    result.type = type;
+    result.socket = ::socket((int)family, (int)type, (int)protocol);
 
     return result;
   }
@@ -60,56 +68,37 @@ namespace astro { namespace net
     {
       int yes = 1;
       if (::setsockopt(s->socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
-        log_debug("Error setting SO_REUSEADDR on socket. Bind may fail.");
+        log_warn("Error setting SO_REUSEADDR on socket. Bind may fail.");
 
-      if (::bind(s->socket, s->info->ai_addr, s->info->ai_addrlen) < 0)
+      struct addrinfo* res;
+      struct addrinfo hints = {};
+      hints.ai_family = (int) s->ip.family;
+      hints.ai_socktype = (int) s->type;
+      char ip_str[256];
+      char port_str[10];
+      sprintf(port_str, "%d", port);
+
+      if (ip == ip_address::any)
       {
-        log_error("Error binding socket to port %d", port);
-        result = false;
+        hints.ai_flags = AI_PASSIVE;
+        ip_address_to_string(ip_str, sizeof(ip_str), &ip);
       }
 
-    //   switch(ip.family)
-    //   {
-    //   case address_family::inter_network:
-    //     {
-    //       struct sockaddr_in sa = {};
-    //       sa.sin_family = (sa_family_t)ip.family;
-    //       sa.sin_addr.s_addr = htonl(ip_address_as_v4_int(&ip));
-    //       sa.sin_port = htons(port);
-    //       memset(sa.sin_zero, '\0', sizeof(sa.sin_zero));
-    //
-    //       log_debug("sin_family %d", sa.sin_family);
-    //       log_debug("AF_INET: %d", AF_INET);
-    //       log_debug("sin_addr: %d", sa.sin_addr.s_addr);
-    //       log_debug("sin_port: %d", sa.sin_port);
-    //
-    //       if (::bind(s->socket, (sockaddr*)&sa, sizeof(sockaddr_in)) < 0)
-    //       {
-    //         log_error("Error binding socket to port %d", port);
-    //         result = false;
-    //       }
-    //     }
-    //   case address_family::inter_network_v6:
-    //     {
-    //       struct sockaddr_in6 sa = {};
-    //       sa.sin6_family = (sa_family_t)ip.family;
-    //       sa.sin6_port = htons(port);
-    //       sa.sin6_scope_id = ip.scope;
-    //
-    //       memcpy(sa.sin6_addr.s6_addr, ip.addr, sizeof(ip.addr));
-    //
-    //       if (::bind(s->socket, (sockaddr*)&sa, sizeof(sockaddr_in6)) < 0)
-    //       {
-    //         log_error("Error binding socket to port %d", port);
-    //         result = false;
-    //       }
-    //     }
-    //     break;
-    //   default:
-    //     // TODO: Support unix sockets at a minimum.
-    //     result = false;
-    //     break;
-    //   }
+      if (getaddrinfo(ip_str, port_str, &hints, &res) < 0)
+      {
+        log_error("Error calling getaddrinfo.");
+        result = false;
+      }
+      else
+      {
+        if (::bind(s->socket, res->ai_addr, res->ai_addrlen) < 0)
+        {
+          log_error("Error binding socket to port %d", port);
+          result = false;
+        }
+      }
+      
+      freeaddrinfo(res);
     }
 
     if (result)
@@ -150,65 +139,29 @@ namespace astro { namespace net
 
     bool32 result = true;
     char port_str[10];
+    char url[256];
     sprintf(port_str, "%d", port);
 
     struct addrinfo* res;
     struct addrinfo hints = {};
-    hints.ai_family = s->info->ai_family;
-    hints.ai_socktype = s->info->ai_socktype;
-    if (getaddrinfo(ip_address_to_string(&ip), port_str, &hints, &res) < 0)
+    hints.ai_family = (int) s->ip.family;
+    hints.ai_socktype = (int) s->type;
+
+    ip_address_to_string(url, sizeof(url), &ip);
+    if (getaddrinfo(url, port_str, &hints, &res) < 0)
     {
       log_error("Error calling getaddrinfo.");
     }
     else
     {
-      // result.ip.family = family;
-      // result.socket = ::socket((int)family, (int)type, (int)protocol);
-
       if (::connect(s->socket, res->ai_addr, res->ai_addrlen) < 0)
       {
-        log_error("Error connecting socket to %s:%d", ip_address_to_string(&ip), port);
+        log_error("Error connecting socket to %s:%d", url, port);
         result = false;
       }
     }
-
-
-    // switch(ip.family)
-    // {
-    // case address_family::inter_network:
-    //   {
-    //     struct sockaddr_in sa = {};
-    //     sa.sin_family = (sa_family_t)ip.family;
-    //     sa.sin_addr.s_addr = htonl(ip_address_as_v4_int(&ip));
-    //     sa.sin_port = htons(port);
-    //
-    //     if (::connect(s->socket, (sockaddr*)&sa, sizeof(sockaddr_in)) < 0)
-    //     {
-    //       log_error("Error connecting socket to %s:%d", ip_address_to_string(&ip), port);
-    //       result = false;
-    //     }
-    //   }
-    // case address_family::inter_network_v6:
-    //   {
-    //     struct sockaddr_in6 sa = {};
-    //     sa.sin6_family = (sa_family_t)ip.family;
-    //     sa.sin6_port = htons(port);
-    //     sa.sin6_scope_id = ip.scope;
-    //
-    //     memcpy(sa.sin6_addr.s6_addr, ip.addr, sizeof(ip.addr));
-    //
-    //     if (::connect(s->socket, (sockaddr*)&sa, sizeof(sockaddr_in6)) < 0)
-    //     {
-    //       log_error("Error connecting socket to %s:%d", ip_address_to_string(&ip), port);
-    //       result = false;
-    //     }
-    //   }
-    //   break;
-    // default:
-    //   // TODO: Support unix sockets at a minimum.
-    //   result = false;
-    //   break;
-    // }
+    
+    freeaddrinfo(res);
 
     if (result)
     {

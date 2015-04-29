@@ -179,10 +179,10 @@ namespace astro
     pop_size(stack->parent, stack->size + header_size);
   }
 
-
   template <typename T>
   class memory_stack_allocator
   {
+  protected:
     memory_stack* m_stack;
 
   public:
@@ -243,6 +243,20 @@ namespace astro
     {
       return !operator==(rhs);
     }
+  };
+
+  template <typename T>
+  class static_allocator : public memory_stack_allocator<T>
+  {
+  public:
+    static_allocator(T* buffer, uintptr buffer_size)
+      : memory_stack_allocator<T>(&stack)
+    {
+      initialize_memory_stack(&stack, buffer_size, (uint8*)buffer);
+    }
+
+  private:
+    memory_stack stack;
   };
 
   // TODO: Better default allocator.

@@ -491,6 +491,12 @@ namespace astro { namespace net
     return result;
   }
 
+  inline const char*
+  ip_address_to_string(char* buffer, uintptr buffer_len, ip_address* ip, uint16 port = 0)
+  {
+    return ip_address_to_string(ip, port, static_allocator<char>(buffer, buffer_len));
+  }
+
 #ifdef ASTRO_IMPLEMENTATION
   ip_address ip_address::loopback(127, 0, 0, 1);
   ip_address ip_address::any(0);
