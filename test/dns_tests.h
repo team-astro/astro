@@ -41,8 +41,9 @@ TEST dns_resolution_succeeds() {
     std::vector<ip_address> addresses = dns::resolve_host_name(test_dns).get();
     transform(begin(addresses), end(addresses), back_inserter(result_ips), [](ip_address& ip)
     {
-      auto s = ip_address_to_string(&ip);
-      return s;
+      char s[INET6_ADDRSTRLEN];
+      ip_address_to_string(s, sizeof(s), &ip);
+      return std::string(s);
     });
 
     for (auto& ip : test_ips)

@@ -63,71 +63,101 @@ namespace astro { namespace net
     static ip_address node_local;
     static ip_address link_local;
 
-    ip_address(address_family family = address_family::none)
-      : family(family)
-      , scope(0)
-    {
-      memset(addr, 0, sizeof(uint8) * ASTRO_COUNTOF(addr));
-    }
+    ip_address(address_family family = address_family::none);
+    ip_address(uint32 ip);
+    ip_address(uint8 a, uint8 b, uint8 c, uint8 d);
+    ip_address(uint16 a, uint16 b, uint16 c, uint16 d, uint16 e, uint16 f, uint16 g, uint16 h, uint32 scope = 0);
+    ip_address(const ip_address& rhs);
 
-    ip_address(uint32 ip)
-      : family(address_family::inter_network)
-      , scope(0)
-    {
-      memset(addr, 0, sizeof(uint8) * ASTRO_COUNTOF(addr));
-
-      addr[0] = (uint8)((ip >> 0) & 0xFF);
-      addr[1] = (uint8)((ip >> 8) & 0xFF);
-      addr[2] = (uint8)((ip >> 16) & 0xFF);
-      addr[3] = (uint8)((ip >> 24) & 0xFF);
-    }
-
-    ip_address(uint8 a, uint8 b, uint8 c, uint8 d)
-      : family(address_family::inter_network)
-      , scope(0)
-    {
-      memset(addr, 0, sizeof(uint8) * ASTRO_COUNTOF(addr));
-
-      addr[0] = a;
-      addr[1] = b;
-      addr[2] = c;
-      addr[3] = d;
-    }
-
-    ip_address(uint16 a, uint16 b, uint16 c, uint16 d, uint16 e, uint16 f, uint16 g, uint16 h, uint32 scope = 0)
-      : family(address_family::inter_network_v6)
-      , scope(scope)
-    {
-      memset(addr_v6, 0, sizeof(uint16) * ASTRO_COUNTOF(addr_v6));
-
-      addr_v6[0] = a;
-      addr_v6[1] = b;
-      addr_v6[2] = c;
-      addr_v6[3] = d;
-      addr_v6[4] = e;
-      addr_v6[5] = f;
-      addr_v6[6] = g;
-      addr_v6[7] = h;
-    }
-
-    ip_address(const ip_address& rhs)
-      : scope(rhs.scope)
-      , family(rhs.family)
-    {
-      memcpy(addr, rhs.addr, sizeof(uint8) * ASTRO_COUNTOF(addr));
-    }
-
-    bool operator==(const ip_address& rhs)
-    {
-      return memcmp(addr, rhs.addr, sizeof(uint16) * ASTRO_COUNTOF(addr))
-        && family == rhs.family;
-    }
-
-    bool operator!=(const ip_address& rhs)
-    {
-      return !((*this) == rhs);
-    }
+    bool operator==(const ip_address& rhs);
+    bool operator!=(const ip_address& rhs);
   };
+
+  inline uint32
+  ip_address_as_v4_int(ip_address* ip);
+
+  inline ip_address
+  parse_ip_address(const char* ip, uint16* port = nullptr);
+
+  template <typename Allocator = allocator<char>>
+  inline const char*
+  ip_address_to_string(ip_address* ip, uint16 port = 0, Allocator allocator = Allocator());
+
+  inline const char*
+  ip_address_to_string(char* buffer, uintptr buffer_len, ip_address* ip, uint16 port = 0);
+
+#ifdef ASTRO_IMPLEMENTATION
+  ip_address ip_address::loopback(127, 0, 0, 1);
+  ip_address ip_address::any(0);
+  ip_address ip_address::broadcast(0xffffffff);
+  // TODO: Check endianness
+  ip_address ip_address::node_local(0xff01, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001);
+  ip_address ip_address::link_local(0xff02, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001);
+
+  ip_address::ip_address(address_family family)
+    : family(family)
+    , scope(0)
+  {
+    memset(addr, 0, sizeof(uint8) * ASTRO_COUNTOF(addr));
+  }
+
+  ip_address::ip_address(uint32 ip)
+    : family(address_family::inter_network)
+    , scope(0)
+  {
+    memset(addr, 0, sizeof(uint8) * ASTRO_COUNTOF(addr));
+
+    addr[0] = (uint8)((ip >> 0) & 0xFF);
+    addr[1] = (uint8)((ip >> 8) & 0xFF);
+    addr[2] = (uint8)((ip >> 16) & 0xFF);
+    addr[3] = (uint8)((ip >> 24) & 0xFF);
+  }
+
+  ip_address::ip_address(uint8 a, uint8 b, uint8 c, uint8 d)
+    : family(address_family::inter_network)
+    , scope(0)
+  {
+    memset(addr, 0, sizeof(uint8) * ASTRO_COUNTOF(addr));
+
+    addr[0] = a;
+    addr[1] = b;
+    addr[2] = c;
+    addr[3] = d;
+  }
+
+  ip_address::ip_address(uint16 a, uint16 b, uint16 c, uint16 d, uint16 e, uint16 f, uint16 g, uint16 h, uint32 scope)
+    : family(address_family::inter_network_v6)
+    , scope(scope)
+  {
+    memset(addr_v6, 0, sizeof(uint16) * ASTRO_COUNTOF(addr_v6));
+
+    addr_v6[0] = a;
+    addr_v6[1] = b;
+    addr_v6[2] = c;
+    addr_v6[3] = d;
+    addr_v6[4] = e;
+    addr_v6[5] = f;
+    addr_v6[6] = g;
+    addr_v6[7] = h;
+  }
+
+  ip_address::ip_address(const ip_address& rhs)
+    : scope(rhs.scope)
+    , family(rhs.family)
+  {
+    memcpy(addr, rhs.addr, sizeof(uint8) * ASTRO_COUNTOF(addr));
+  }
+
+  bool ip_address::operator==(const ip_address& rhs)
+  {
+    return memcmp(addr, rhs.addr, sizeof(uint16) * ASTRO_COUNTOF(addr))
+      && family == rhs.family;
+  }
+
+  bool ip_address::operator!=(const ip_address& rhs)
+  {
+    return !((*this) == rhs);
+  }
 
   namespace
   {
@@ -197,7 +227,7 @@ namespace astro { namespace net
   }
 
   inline ip_address
-  parse_ip_address(const char* ip, uint16* port = nullptr)
+  parse_ip_address(const char* ip, uint16* port)
   {
     ip_address result = {};
     const char* firstColon = strchr(ip, ':');
@@ -393,9 +423,9 @@ namespace astro { namespace net
     return result;
   }
 
-  template <typename Allocator = allocator<char>>
+  template <typename Allocator>
   inline const char*
-  ip_address_to_string(ip_address* ip, uint16 port = 0, Allocator allocator = Allocator())
+  ip_address_to_string(ip_address* ip, uint16 port, Allocator allocator)
   {
     const char* result = nullptr;
     if (ip->family == address_family::inter_network)
@@ -492,18 +522,10 @@ namespace astro { namespace net
   }
 
   inline const char*
-  ip_address_to_string(char* buffer, uintptr buffer_len, ip_address* ip, uint16 port = 0)
+  ip_address_to_string(char* buffer, uintptr buffer_len, ip_address* ip, uint16 port)
   {
     return ip_address_to_string(ip, port, static_allocator<char>(buffer, buffer_len));
   }
-
-#ifdef ASTRO_IMPLEMENTATION
-  ip_address ip_address::loopback(127, 0, 0, 1);
-  ip_address ip_address::any(0);
-  ip_address ip_address::broadcast(0xffffffff);
-  // TODO: Check endianness
-  ip_address ip_address::node_local(0xff01, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001);
-  ip_address ip_address::link_local(0xff02, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001);
 #endif
 
 }}
