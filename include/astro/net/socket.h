@@ -85,7 +85,7 @@ namespace astro { namespace net
   bool32
   socket_send(socket* s, uint8* data, uintptr data_len);
 
-  bool32
+  int32
   socket_recv(socket* s, uint8* data, uintptr data_len);
 }}
 

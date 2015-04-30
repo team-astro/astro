@@ -237,32 +237,25 @@ namespace astro { namespace net
     return data_len == 0;
   }
 
-  bool32
+  int32
   socket_recv(socket* s, uint8* data, uintptr data_len)
   {
     if (s && s->socket && s->is_connected)
     {
-      do
+      int res = ::recv(s->socket, (void*)data, data_len, 0);
+      if (res < 0)
       {
-        int res = ::recv(s->socket, (void*)data, data_len, 0);
-        if (res < 0)
-        {
-          log_error("Error recieving data from socket.");
-          break;
-        }
+        log_error("Error recieving data from socket.");
+      }
+      else if (res == 0)
+      {
+        // TODO: Send notification of socket closing?
+        socket_close(s);
+      }
 
-        if (res == 0)
-        {
-          // TODO: Send notification of socket closing?
-          socket_close(s);
-          break;
-        }
-
-        data_len -= res;
-        data += res;
-      } while (data_len > 0);
+      return res;
     }
 
-    return data_len == 0;
+    return 0;
   }
 }}

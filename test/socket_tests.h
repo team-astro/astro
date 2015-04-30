@@ -45,7 +45,7 @@ TEST socket_should_listen_and_connect()
   ASSERT(socket_connect(&client, ip_address::loopback, test_port));
 
   server_thread.join();
-  
+
   socket_close(&client);
 
   PASS();
@@ -78,8 +78,8 @@ TEST socket_should_send_and_recv()
 
     ASSERT(socket_send(&connection, (uint8*) buffer, buffer_len + 1));
 
-    ASSERT(socket_recv(&connection, (uint8*) &buffer_len, sizeof(char)));
-    ASSERT(socket_recv(&connection, (uint8*) buffer, buffer_len));
+    ASSERT_EQ(sizeof(char), socket_recv(&connection, (uint8*) &buffer_len, sizeof(char)));
+    ASSERT_EQ(buffer_len, socket_recv(&connection, (uint8*) buffer, buffer_len));
     log_debug("server recv: %s", buffer);
 
     socket_close(&connection);
@@ -102,8 +102,8 @@ TEST socket_should_send_and_recv()
   char buffer[256];
   char buffer_len = 0;
 
-  ASSERT(socket_recv(&client, (uint8*) &buffer_len, sizeof(char)));
-  ASSERT(socket_recv(&client, (uint8*) buffer, buffer_len));
+  ASSERT_EQ(sizeof(char), socket_recv(&client, (uint8*) &buffer_len, sizeof(char)));
+  ASSERT_EQ(buffer_len, socket_recv(&client, (uint8*) buffer, buffer_len));
   log_debug("client recv: %s", buffer);
 
   sprintf(buffer + 1, "Hello, %s", ip);
@@ -113,7 +113,7 @@ TEST socket_should_send_and_recv()
   ASSERT(socket_send(&client, (uint8*) buffer, buffer_len + 1));
 
   server_thread.join();
-  
+
   socket_close(&client);
 
   PASS();
