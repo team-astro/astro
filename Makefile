@@ -1,5 +1,4 @@
 UNAME := $(shell uname)
-CWD := $(shell pwd)
 ifeq ($(UNAME),$(filter $(UNAME),Linux Darwin))
 	ifeq ($(UNAME),$(filter $(UNAME),Darwin))
 		# TODO: Check for iOS build flags.
@@ -13,10 +12,10 @@ else
 endif
 
 program_NAME := astro-tests
-program_SRCS := $(shell find `pwd`/test -type f -name '*.cpp')
+program_SRCS := $(abspath test/main.cpp)
 program_OBJS := ${program_SRCS:.cpp=.o}
 program_DEPS := ${program_OBJS:.o=.dep}
-program_INCLUDE_DIRS := $(CWD)/include $(CWD)/deps
+program_INCLUDE_DIRS := $(abspath include) $(abspath deps)
 program_LIBRARY_DIRS :=
 program_LIBRARIES :=
 

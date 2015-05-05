@@ -147,7 +147,7 @@ namespace astro
     return strncpy(dest, str, len);
   }
 
-  inline bool
+  inline bool32
   pop_string(memory_stack* stack, const char* value)
   {
     auto len = strlen(value);
