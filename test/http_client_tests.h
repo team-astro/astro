@@ -14,7 +14,7 @@ using test_http_req = std::tuple<const char*, http_status_code>;
 TEST http_get() {
 
   test_http_req test_data[] = {
-    test_http_req("http://mattrudder.com", http_status_code::OK),
+    test_http_req("http://mattrudder.com", http_status_code::ok),
   };
 
   for (auto&& test : test_data)
