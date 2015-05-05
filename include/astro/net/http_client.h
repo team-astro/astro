@@ -102,6 +102,7 @@ namespace astro { namespace net
   {
     struct http_response_in_flight
     {
+      char tmp[256];
       http_response* response;
       socket* socket;
     };
@@ -147,36 +148,47 @@ namespace astro { namespace net
     static int on_header_field(http_parser* p, const char *at, size_t length)
     {
       auto r = (http_response_in_flight*) p->data;
-      log_debug("on_header_field: %*s", (int) length, at);
+      strncpy(r->tmp, at, length);
+      r->tmp[length] = '\0';
+      log_debug("on_header_field: %s", r->tmp);
       return 0;
     }
 
     static int on_header_value(http_parser* p, const char *at, size_t length)
     {
       auto r = (http_response_in_flight*) p->data;
-      log_debug("on_header_value: %*s", (int) length, at);
+      strncpy(r->tmp, at, length);
+      r->tmp[length] = '\0';
+      log_debug("on_header_value: %s", r->tmp);
       return 0;
     }
 
     static int on_url(http_parser* p, const char *at, size_t length)
     {
       auto r = (http_response_in_flight*) p->data;
-      log_debug("on_url: %*s", (int) length, at);
+      strncpy(r->tmp, at, length);
+      r->tmp[length] = '\0';
+      log_debug("on_url: %s", r->tmp);
       return 0;
     }
 
     static int on_status(http_parser* p, const char *at, size_t length)
     {
       auto r = (http_response_in_flight*) p->data;
+
       r->response->status_code = parse_status_code(at, length);
-      log_debug("on_status: %*s", (int) length, at);
+      strncpy(r->tmp, at, length);
+      r->tmp[length] = '\0';
+      log_debug("on_status: %s", r->tmp);
       return 0;
     }
 
     static int on_body(http_parser* p, const char *at, size_t length)
     {
       auto r = (http_response_in_flight*) p->data;
-      //log_debug("on_body: %*s", (int) length, at);
+      //strncpy(r->tmp, at, length);
+      //r->tmp[length] = '\0';
+      //log_debug("on_body: %s", r->tmp);
       return 0;
     }
   }
