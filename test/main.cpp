@@ -12,6 +12,7 @@
 #include <astro/io/file.h>
 #include <astro/io/path.h>
 #include <astro/net/dns.h>
+#include <astro/net/http_client.h>
 #include <astro/net/ip_address.h>
 #include <astro/net/socket.h>
 #undef ASTRO_IMPLEMENTATION
@@ -25,6 +26,7 @@ GREATEST_MAIN_DEFS();
 #include "socket_tests.h"
 #include "ip_address_tests.h"
 #include "dns_tests.h"
+#include "http_client_tests.h"
 
 int main(int argc, char **argv)
 {
@@ -32,6 +34,7 @@ int main(int argc, char **argv)
   RUN_SUITE(path_tests);
   RUN_SUITE(socket_tests);
   RUN_SUITE(ip_address_tests);
-  RUN_SUITE(dns_tests);
+  //RUN_SUITE(dns_tests);
+  RUN_SUITE(http_client_tests);
   GREATEST_MAIN_END();        /* display results */
 }

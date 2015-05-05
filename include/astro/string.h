@@ -138,6 +138,34 @@ namespace astro
     return(dlen + (s - src)); /* count does not include NUL */
   }
 
+  inline size_t
+  append_format(char* dst, size_t dst_len, const char* fmt, ...)
+  {
+    char* dd = dst;
+    size_t dlen;
+    size_t len;
+
+    while (*dd != '\0') ++dd;
+
+    dlen = dd - dst;
+    len = dst_len - dlen;
+
+    va_list lst;
+    va_start(lst, fmt);
+    va_list lst_copy;
+    va_copy(lst_copy, lst);
+
+    int size_needed = vsnprintf(nullptr, 0, fmt, lst) + 1;
+    va_end(lst);
+
+    if (len < size_needed)
+      return size_needed;
+
+    size_t result = vsnprintf(dd, len, fmt, lst_copy);
+    va_end(lst_copy);
+
+    return result;
+  }
 }
 
 #endif

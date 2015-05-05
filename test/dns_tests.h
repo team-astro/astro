@@ -38,13 +38,14 @@ TEST dns_resolution_succeeds() {
     std::vector<std::string> result_ips;
     std::tie(test_dns, test_ips) = addr;
 
-    std::vector<ip_address> addresses = dns::resolve_host_name(test_dns).get();
-    transform(begin(addresses), end(addresses), back_inserter(result_ips), [](ip_address& ip)
-    {
-      char s[INET6_ADDRSTRLEN];
-      ip_address_to_string(s, sizeof(s), &ip);
-      return std::string(s);
-    });
+    auto addresses = dns::resolve_host_name(test_dns, strlen(test_dns)).get();
+    transform(begin(addresses), end(addresses), back_inserter(result_ips),
+      [](ip_address& ip)
+      {
+        char s[INET6_ADDRSTRLEN];
+        ip_address_to_string(s, sizeof(s), &ip);
+        return std::string(s);
+      });
 
     for (auto& ip : test_ips)
     {
