@@ -82,9 +82,10 @@ namespace astro { namespace net
         ip_address_to_string(ip_str, sizeof(ip_str), &ip);
       }
 
-      if (getaddrinfo(ip_str, port_str, &hints, &res) < 0)
+      int gai_res = getaddrinfo(ip_str, port_str, &hints, &res);
+      if (gai_res != 0)
       {
-        log_error("Error calling getaddrinfo.");
+        log_error("Error in getaddrinfo: %s", gai_strerror(gai_res));
         result = false;
       }
       else
@@ -146,9 +147,11 @@ namespace astro { namespace net
     hints.ai_socktype = (int) s->type;
 
     ip_address_to_string(url, sizeof(url), &ip);
-    if (getaddrinfo(url, port_str, &hints, &res) < 0)
+    int gai_res = getaddrinfo(url, port_str, &hints, &res);
+    if (gai_res != 0)
     {
-      log_error("Error calling getaddrinfo.");
+      log_error("Error in getaddrinfo: %s", gai_strerror(gai_res));
+      result = false;
     }
     else
     {

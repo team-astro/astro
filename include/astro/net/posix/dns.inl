@@ -27,17 +27,24 @@ namespace astro { namespace net
 
         strncpy(host, name, min(sizeof(host), name_len));
 
-        getaddrinfo(host, nullptr, &hints, &infos);
-        for (struct addrinfo* info = infos; info; info = info->ai_next)
+        int gai_res = getaddrinfo(host, nullptr, &hints, &infos);
+        if (gai_res != 0)
         {
-          if (getnameinfo(info->ai_addr, info->ai_addrlen, host, sizeof(host),
-            nullptr, 0, NI_NUMERICHOST) == 0)
+          log_error("Error in getaddrinfo: %s", gai_strerror(gai_res));
+        }
+        else
+        {
+          for (struct addrinfo* info = infos; info; info = info->ai_next)
           {
-            ip_address ip = parse_ip_address(host);
-            if (family != address_family::none && ip.family != family)
-              continue;
+            if (getnameinfo(info->ai_addr, info->ai_addrlen, host, sizeof(host),
+              nullptr, 0, NI_NUMERICHOST) == 0)
+            {
+              ip_address ip = parse_ip_address(host);
+              if (family != address_family::none && ip.family != family)
+                continue;
 
-            result.push_back(ip);
+              result.push_back(ip);
+            }
           }
         }
 
