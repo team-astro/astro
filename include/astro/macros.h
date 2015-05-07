@@ -80,6 +80,7 @@
 # define ASTRO_FUNCTION __FUNCTION__
 # define ASTRO_NO_INLINE __declspec(noinline)
 # define ASTRO_NO_RETURN
+// https://msdn.microsoft.com/en-us/magazine/cc301398.aspx
 # define ASTRO_NO_VTABLE __declspec(novtable)
 # define ASTRO_OVERRIDE override
 # define ASTRO_PRINTF_ARGS(_format, _args)

@@ -12,24 +12,27 @@
 
 namespace astro
 {
-  template <typename Allocator = allocator<char>>
-  inline char* strdup(const char* str, Allocator allocator = Allocator())
+  inline char* strndup(const char* str, uintptr n, allocator* allocator = default_allocator)
   {
-    if (str == nullptr) return nullptr;
+    astro_assert(str);
+    astro_assert(strlen(str) >= n);
 
     char* result = nullptr;
-    size_t len = strlen(str);
-    result = (char*) allocator.allocate(len + 1);
-    strncpy(result, str, len);
-    result[len] = '\0';
+    result = (char*) ASTRO_ALLOC(allocator, n + 1);
+    strncpy(result, str, n);
+    result[n] = '\0';
 
     return result;
   }
 
+  inline char* strdup(const char* str, allocator* allocator = default_allocator)
+  {
+    return strndup(str, strlen(str), allocator);
+  }
+
   // Allocate a new string with the correct length needed to
   // print the provided arguments.
-  template <typename Allocator = allocator<char>>
-  inline const char* saprintf(const char* fmt, Allocator allocator, ...)
+  inline const char* saprintf(const char* fmt, allocator* allocator, ...)
   {
     va_list lst;
     va_start(lst, allocator);
@@ -39,7 +42,7 @@ namespace astro
     int size = vsnprintf(nullptr, 0, fmt, lst) + 1;
     va_end(lst);
 
-    char* result = allocator.allocate(size);
+    char* result = (char*) ASTRO_ALLOC(allocator, size);
     vsnprintf(result, size, fmt, lst_copy);
     va_end(lst_copy);
 

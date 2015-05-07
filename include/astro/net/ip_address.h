@@ -79,9 +79,8 @@ namespace astro { namespace net
   inline ip_address
   parse_ip_address(const char* ip, uint16* port = nullptr);
 
-  template <typename Allocator = allocator<char>>
   inline const char*
-  ip_address_to_string(ip_address* ip, uint16 port = 0, Allocator allocator = Allocator());
+  ip_address_to_string(ip_address* ip, uint16 port = 0, allocator* allocator = default_allocator);
 
   inline const char*
   ip_address_to_string(char* buffer, uintptr buffer_len, ip_address* ip, uint16 port = 0);
@@ -423,9 +422,8 @@ namespace astro { namespace net
     return result;
   }
 
-  template <typename Allocator>
   inline const char*
-  ip_address_to_string(ip_address* ip, uint16 port, Allocator allocator)
+  ip_address_to_string(ip_address* ip, uint16 port, allocator* allocator)
   {
     const char* result = nullptr;
     if (ip->family == address_family::inter_network)
@@ -524,7 +522,8 @@ namespace astro { namespace net
   inline const char*
   ip_address_to_string(char* buffer, uintptr buffer_len, ip_address* ip, uint16 port)
   {
-    return ip_address_to_string(ip, port, static_allocator<char>(buffer, buffer_len));
+    static_allocator allocator((uint8*) buffer, buffer_len);
+    return ip_address_to_string(ip, port, &allocator);
   }
 #endif
 

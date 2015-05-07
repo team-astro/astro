@@ -17,8 +17,23 @@
 #include <http-parser/http_parser.c>
 #endif
 
+// HTTP Client to-do list
+// Currently supported:
+// - GET requests
+// - Read headers to std::map
+// - Following redirects
+// Bugs:
+// - Body reads stop part way through
+// Todos:
+// - POST forms, content (JSON, etc)
+// - Cookie handling
+// - Caching
+// - Loads more
+
 namespace astro { namespace net
 {
+  constexpr uint8 kMaxHttpRedirects = 4;
+
   enum class http_status_code : uint16
   {
     none = 0,
@@ -91,18 +106,35 @@ namespace astro { namespace net
     max
   };
 
+  struct http_header
+  {
+    const char* key;
+    const char* value;
+    uintptr key_length;
+    uintptr value_length;
+    http_header* next;
+  };
+
+  struct http_request
+  {
+    const char* url;
+    const char* method;
+    socket* socket;
+  };
+
   struct http_response
   {
     http_status_code status_code;
-    std::map<std::string, std::string> headers;
+    http_header* headers;
     uint8* body;
+    uintptr body_len;
   };
 
-  typedef std::pair<const char*, const char*> http_header;
-  typedef std::pair<const char*, const char*> http_query_param;
+  //typedef std::pair<const char*, const char*> http_header;
+  //typedef std::pair<const char*, const char*> http_query_param;
 
   std::future<http_response>
-  http_request(const char* url, const char* method = "GET");
+  http(http_request* req, allocator* alloc = default_allocator);
 
   inline bool32
   http_status_code_is_success(http_status_code status)
@@ -132,14 +164,32 @@ namespace astro { namespace net
       status < http_status_code::max;
   }
 
+  inline http_header*
+  http_header_find_key(http_header* headers, const char* key)
+  {
+    size_t key_length = strlen(key);
+    while (headers)
+    {
+      size_t max_len = max(key_length, headers->key_length);
+      if (strncmp(key, headers->key, max_len) == 0)
+        return headers;
+      headers = headers->next;
+    }
+
+    return nullptr;
+  }
+
 #ifdef ASTRO_IMPLEMENTATION
   namespace
   {
-    struct http_response_in_flight
+
+    struct http_request_closure
     {
       char tmp[256];
+
+      http_request* request;
       http_response* response;
-      socket* socket;
+      allocator* allocator;
 
       const char *current_header_field;
       uintptr current_header_field_len;
@@ -148,17 +198,18 @@ namespace astro { namespace net
 
     static int on_message_begin(http_parser* p)
     {
-      auto r = (http_response_in_flight*) p->data;
+      auto r = (http_request_closure*) p->data;
       return 0;
     }
 
     static int on_headers_complete(http_parser* p)
     {
-      auto r = (http_response_in_flight*) p->data;
+      auto r = (http_request_closure*) p->data;
+      auto req = r->request;
       if (http_should_keep_alive(p) == 0)
       {
         log_debug("headers complete on non-keep alive socket. closing.");
-        socket_close(r->socket);
+        socket_close(req->socket);
       }
       else if (p->content_length)
       {
@@ -171,11 +222,12 @@ namespace astro { namespace net
 
     static int on_message_complete(http_parser* p)
     {
-      auto r = (http_response_in_flight*) p->data;
+      auto r = (http_request_closure*) p->data;
+      auto req = r->request;
       if (http_should_keep_alive(p) == 0)
       {
         log_debug("message complete on non-keep alive socket. closing.");
-        socket_close(r->socket);
+        socket_close(req->socket);
       }
 
       return 0;
@@ -183,7 +235,8 @@ namespace astro { namespace net
 
     static int on_header_field(http_parser* p, const char *at, size_t length)
     {
-      auto r = (http_response_in_flight*) p->data;
+      auto r = (http_request_closure*) p->data;
+      auto res = r->response;
       strncpy(r->tmp, at, length);
       r->tmp[length] = '\0';
       log_debug("on_header_field: %s", r->tmp);
@@ -191,28 +244,40 @@ namespace astro { namespace net
       r->current_header_field = at;
       r->current_header_field_len = length;
 
+      http_header* current = (http_header*) ASTRO_ALLOC(r->allocator, sizeof(http_header));
+      current->next = res->headers;
+      auto key = (char*) ASTRO_ALLOC(r->allocator, length + 1);
+      strncpy(key, at, length);
+      key[length] = '\0';
+      current->key = key;
+      current->key_length = length;
+
+      res->headers = current;
+
       return 0;
     }
 
     static int on_header_value(http_parser* p, const char *at, size_t length)
     {
-      auto r = (http_response_in_flight*) p->data;
+      auto r = (http_request_closure*) p->data;
+      auto res = r->response;
       strncpy(r->tmp, at, length);
       r->tmp[length] = '\0';
       log_debug("on_header_value: %s", r->tmp);
 
-      if (r->current_header_field && r->current_header_field_len)
-      {
-        std::string key(r->current_header_field, r->current_header_field_len);
-        r->response->headers[key] = std::string(at, length);
-      }
+      assert(res->headers);
+      auto value = (char*) ASTRO_ALLOC(r->allocator, length + 1);
+      strncpy(value, at, length);
+      value[length] = '\0';
+      res->headers->value = value;
+      res->headers->value_length = length;
 
       return 0;
     }
 
     static int on_url(http_parser* p, const char *at, size_t length)
     {
-      auto r = (http_response_in_flight*) p->data;
+      auto r = (http_request_closure*) p->data;
       strncpy(r->tmp, at, length);
       r->tmp[length] = '\0';
       log_debug("on_url: %s", r->tmp);
@@ -221,7 +286,7 @@ namespace astro { namespace net
 
     static int on_status(http_parser* p, const char *at, size_t length)
     {
-      auto r = (http_response_in_flight*) p->data;
+      auto r = (http_request_closure*) p->data;
 
       r->response->status_code = (http_status_code) p->status_code;
       strncpy(r->tmp, at, length);
@@ -232,7 +297,7 @@ namespace astro { namespace net
 
     static int on_body(http_parser* p, const char *at, size_t length)
     {
-      auto r = (http_response_in_flight*) p->data;
+      auto r = (http_request_closure*) p->data;
 
       // TODO: Handle body streaming.
       uint8* body = r->response->body;
@@ -251,20 +316,17 @@ namespace astro { namespace net
       return 0;
     }
 
-    static void
+    static bool32
     do_request(ip_address ip, uint16 port, const char* method,
       const char* host, uintptr host_len,
       const char* path, uintptr path_len,
-      http_response* res, socket* conn = nullptr)
+      http_request_closure* closure)
     {
-      bool32 one_use_socket = conn == nullptr;
-      socket s = {};
-      if (one_use_socket)
-      {
-        s = socket_create(ip.family, socket_type::stream, protocol_type::tcp);
-        conn = &s;
-      }
+      socket* conn = closure->request->socket;
+      http_response* res = closure->response;
+      http_request* req = closure->request;
 
+      bool32 made_request = false;
       if (conn->is_connected || socket_connect(conn, ip, port))
       {
         assert(conn->ip == ip);
@@ -278,13 +340,8 @@ namespace astro { namespace net
           path_len, path,
           host_len, host);
 
-        if (!one_use_socket)
-        {
-          msg_len += append_format(hdr, HTTP_MAX_HEADER_SIZE,
-            "Connection: Keep-Alive\r\n");
-        }
-
         msg_len += append_format(hdr, HTTP_MAX_HEADER_SIZE,
+          "Connection: Keep-Alive\r\n",
           "Accept: */*\r\n"
           "\r\n");
 
@@ -293,11 +350,7 @@ namespace astro { namespace net
         socket_send(conn, (uint8*) hdr, msg_len);
         http_parser parser = {};
         http_parser_init(&parser, HTTP_RESPONSE);
-
-        http_response_in_flight res_in;
-        res_in.response = res;
-        res_in.socket = conn;
-        parser.data = &res_in;
+        parser.data = closure;
 
         static http_parser_settings settings = {};
         settings.on_message_begin = on_message_begin;
@@ -327,103 +380,135 @@ namespace astro { namespace net
             }
           }
         }
+
+        made_request = true;
       }
+
+      return made_request;
     }
   }
+
   std::future<http_response>
-  http_request(const char* url, const char* method)
+  http(http_request* req, allocator* alloc)
   {
-    return std::async(std::launch::async,
-      [](const char* url, const char* method)
-        {
-          http_response res = {};
-          http_parser_url parsed_url = {};
-          http_parser_parse_url(url, strlen(url), false, &parsed_url);
+    return std::async(std::launch::async, [=]()
+    {
+      const char* url = req->url;
+      const char* method = req->method;
 
-          auto& seg_scheme = parsed_url.field_data[UF_SCHEMA];
-          auto& seg_host = parsed_url.field_data[UF_HOST];
-          auto& seg_path = parsed_url.field_data[UF_PATH];
-          auto& seg_port = parsed_url.field_data[UF_PORT];
-          auto& seg_query = parsed_url.field_data[UF_QUERY];
-          auto& seg_fragment = parsed_url.field_data[UF_FRAGMENT];
-          auto& seg_userinfo = parsed_url.field_data[UF_USERINFO];
+      http_response res = {};
+      http_parser_url parsed_url = {};
+      http_parser_parse_url(url, strlen(url), false, &parsed_url);
 
-          char buffer[1025] = {};
-          log_debug("parsed url: %s", url);
+      auto& seg_scheme = parsed_url.field_data[UF_SCHEMA];
+      auto& seg_host = parsed_url.field_data[UF_HOST];
+      auto& seg_path = parsed_url.field_data[UF_PATH];
+      auto& seg_port = parsed_url.field_data[UF_PORT];
+      auto& seg_query = parsed_url.field_data[UF_QUERY];
+      auto& seg_fragment = parsed_url.field_data[UF_FRAGMENT];
+      auto& seg_userinfo = parsed_url.field_data[UF_USERINFO];
+
+      char buffer[1025] = {};
+      log_debug("parsed url: %s", url);
 
 #define log_debug_seg(seg) \
-          if (seg_##seg.len > 0) { \
-            strncpy(buffer, url + seg_##seg.off, seg_##seg.len); \
-            buffer[seg_##seg.len] = '\0'; \
-            log_debug(#seg ": %s", buffer); \
-          }
+      if (seg_##seg.len > 0) { \
+        strncpy(buffer, url + seg_##seg.off, seg_##seg.len); \
+        buffer[seg_##seg.len] = '\0'; \
+        log_debug(#seg ": %s", buffer); \
+      }
 
-          log_debug_seg(scheme);
-          log_debug_seg(host);
-          log_debug_seg(path);
-          log_debug_seg(port);
-          log_debug_seg(query);
-          log_debug_seg(fragment);
-          log_debug_seg(userinfo);
+      log_debug_seg(scheme);
+      log_debug_seg(host);
+      log_debug_seg(path);
+      log_debug_seg(port);
+      log_debug_seg(query);
+      log_debug_seg(fragment);
+      log_debug_seg(userinfo);
 
 #undef log_debug_seg
 #define url_seg(seg) url + seg_##seg.off
 
-          uint16 port = 0;
+      uint16 port = 0;
 
-          // TODO: Lookup table!
-          if (strncmp("https", url_seg(scheme), 5) == 0)
-            port = 443;
-          else if (strncmp("http", url_seg(scheme), 4) == 0)
-            port = 80;
+      // TODO: Lookup table!
+      if (strncmp("https", url_seg(scheme), 5) == 0)
+        port = 443;
+      else if (strncmp("http", url_seg(scheme), 4) == 0)
+        port = 80;
 
-          if (parsed_url.port > 0)
-            port = parsed_url.port;
+      if (parsed_url.port > 0)
+        port = parsed_url.port;
 
-          const char* host = url + seg_host.off;
-          auto ips = dns::resolve_host_name(host, seg_host.len, address_family::inter_network).get();
-          for (auto& ip : ips)
+      http_request_closure closure = {};
+      bool32 shared_socket = req->socket != nullptr;
+      socket s;
+      if (!shared_socket)
+      {
+        s = socket_create(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+        req->socket = &s;
+      }
+
+      using namespace std::placeholders;
+
+      closure.request = req;
+      closure.response = &res;
+      closure.allocator = alloc;
+
+      const char* host = url + seg_host.off;
+      auto ips = dns::resolve_host_name(host, seg_host.len, address_family::inter_network).get();
+      for (auto& ip : ips)
+      {
+        ip_address_to_string(buffer, sizeof(buffer), &ip);
+        log_debug("resolved to %s", buffer);
+
+        const char* host = url + seg_host.off;
+        uintptr host_len = seg_host.len;
+        const char* path = "/";
+        uintptr path_len = 1;
+        if (seg_path.len > 0)
+        {
+          path_len = seg_path.len;
+          path = url + seg_path.off;
+        }
+
+        if (do_request(ip, port, method, host, host_len, path, path_len, &closure))
+        {
+          // TODO: Make an option for this functionality.
+          uint8 num_redirects = 0;
+          http_status_code status = res.status_code;
+          while (http_status_code_is_redirect(status))
           {
-            ip_address_to_string(buffer, sizeof(buffer), &ip);
-            log_debug("resolved to %s", buffer);
+            auto location = http_header_find_key(res.headers, "Location");
+            if (location == nullptr)
+              break;
 
-            const char* host = url + seg_host.off;
-            uintptr host_len = seg_host.len;
-            const char* path = "/";
-            uintptr path_len = 1;
-            if (seg_path.len > 0)
+            do_request(ip, port, method, host, host_len,
+              location->value, location->value_length, &closure);
+
+            // Check the status code again, in case of chaining redirects.
+            status = res.status_code;
+
+            if (num_redirects >= kMaxHttpRedirects)
             {
-              path_len = seg_path.len;
-              path = url + seg_path.off;
+              log_debug("Max redirects reached. Aborting request.");
+              res = {};
+              break;
             }
-
-            socket conn = socket_create(ip.family, socket_type::stream, protocol_type::tcp);
-            do_request(ip, port, method, host, host_len, path, path_len, &res, &conn);
-
-            // TODO: Make an option for this functionality.
-            http_status_code status = res.status_code;
-            while (http_status_code_is_redirect(status))
-            {
-              auto location = res.headers.find("Location");
-              if (location != res.headers.end())
-              {
-                do_request(ip, port, method, host, host_len,
-                  location->second.c_str(), location->second.size(), &res);
-
-                // Check the status code again, in case of chaining redirects.
-                status = res.status_code;
-              }
-              else
-              {
-                break;
-              }
-            }
-
-
           }
 
-          return res;
-        }, url, method);
+          break;
+        }
+      }
+
+      if (!shared_socket)
+      {
+        socket_destroy(req->socket);
+        req->socket = nullptr;
+      }
+
+      return res;
+    });
   }
 #endif
 

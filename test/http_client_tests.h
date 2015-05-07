@@ -23,7 +23,11 @@ TEST http_get() {
     http_status_code expected_status_code;
     std::tie(test_host, expected_status_code) = test;
 
-    http_response res = http_request(test_host).get();
+    http_request req = {};
+    req.url = test_host;
+    req.method = "GET";
+
+    http_response res = http(&req).get();
     ASSERT_EQ(expected_status_code, res.status_code);
   }
 

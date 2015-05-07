@@ -29,6 +29,16 @@ namespace astro { namespace net
     }
   }
 
+  void
+  socket_destroy(socket* sock)
+  {
+    if (sock)
+    {
+      ::close(sock->socket);
+      *sock = {};
+    }
+  }
+
   socket
   socket_create(address_family family, socket_type type, protocol_type protocol)
   {

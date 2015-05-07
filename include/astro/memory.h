@@ -10,6 +10,34 @@
 #include <cstring>
 #include <functional>
 
+#if ASTRO_CONFIG_ALLOCATOR_DEBUG
+#  define ASTRO_ALLOC(_allocator, _size)                         astro::alloc(_allocator, _size, 0, __FILE__, __LINE__)
+#  define ASTRO_REALLOC(_allocator, _ptr, _size)                 astro::realloc(_allocator, _ptr, _size, 0, __FILE__, __LINE__)
+#  define ASTRO_FREE(_allocator, _ptr)                           astro::free(_allocator, _ptr, 0, __FILE__, __LINE__)
+#  define ASTRO_ALIGNED_ALLOC(_allocator, _size, _align)         astro::alloc(_allocator, _size, _align, __FILE__, __LINE__)
+#  define ASTRO_ALIGNED_REALLOC(_allocator, _ptr, _size, _align) astro::realloc(_allocator, _ptr, _size, _align, __FILE__, __LINE__)
+#  define ASTRO_ALIGNED_FREE(_allocator, _ptr, _align)           astro::free(_allocator, _ptr, _align, __FILE__, __LINE__)
+#  define ASTRO_NEW(_allocator, _type)                           ::new(ASTRO_ALLOC(_allocator, sizeof(_type) ) ) _type
+#  define ASTRO_DELETE(_allocator, _ptr)                         astro::delete_object(_allocator, _ptr, 0, __FILE__, __LINE__)
+#  define ASTRO_ALIGNED_NEW(_allocator, _type, _align)           ::new(ASTRO_ALIGNED_ALLOC(_allocator, sizeof(_type), _align) ) _type
+#  define ASTRO_ALIGNED_DELETE(_allocator, _ptr, _align)         astro::delete_object(_allocator, _ptr, _align, __FILE__, __LINE__)
+#else
+#  define ASTRO_ALLOC(_allocator, _size)                         astro::alloc(_allocator, _size, 0)
+#  define ASTRO_REALLOC(_allocator, _ptr, _size)                 astro::realloc(_allocator, _ptr, _size, 0)
+#  define ASTRO_FREE(_allocator, _ptr)                           astro::free(_allocator, _ptr, 0)
+#  define ASTRO_ALIGNED_ALLOC(_allocator, _size, _align)         astro::alloc(_allocator, _size, _align)
+#  define ASTRO_ALIGNED_REALLOC(_allocator, _ptr, _size, _align) astro::realloc(_allocator, _ptr, _size, _align)
+#  define ASTRO_ALIGNED_FREE(_allocator, _ptr, _align)           astro::free(_allocator, _ptr, _align)
+#  define ASTRO_NEW(_allocator, _type)                           ::new(ASTRO_ALLOC(_allocator, sizeof(_type) ) ) _type
+#  define ASTRO_DELETE(_allocator, _ptr)                         astro::delete_object(_allocator, _ptr, 0)
+#  define ASTRO_ALIGNED_NEW(_allocator, _type, _align)           ::new(ASTRO_ALIGNED_ALLOC(_allocator, sizeof(_type), _align) ) _type
+#  define ASTRO_ALIGNED_DELETE(_allocator, _ptr, _align)         astro::delete_object(_allocator, _ptr, _align)
+#endif
+
+#ifndef ASTRO_CONFIG_ALLOCATOR_NATURAL_ALIGNMENT
+#  define ASTRO_CONFIG_ALLOCATOR_NATURAL_ALIGNMENT 8
+#endif
+
 namespace astro
 {
   struct memory_stack
@@ -75,10 +103,12 @@ namespace astro
   }
 
   inline bool
-  pop_value(memory_stack* stack, void* value, uintptr size)
+  pop_value(memory_stack* stack, void* value)
   {
     if (stack->last == value)
     {
+      uint8* head = stack->base + stack->used;
+      uintptr size = (uintptr)(head - (uint8*)value);
       pop_size(stack, size);
       return true;
     }
@@ -97,7 +127,7 @@ namespace astro
   inline bool32
   pop_struct(memory_stack* stack, t* value)
   {
-    return pop_value(stack, (void*)value, sizeof(t));
+    return pop_value(stack, (void*)value);
   }
 
   template <typename t>
@@ -111,7 +141,7 @@ namespace astro
   inline bool32
   pop_array(memory_stack* stack, t* value, uintptr count)
   {
-    return pop_value(stack, (void*)value, sizeof(t) * count);
+    return pop_value(stack, (void*)value);
   }
 
   inline memory_stack*
@@ -179,88 +209,210 @@ namespace astro
     pop_size(stack->parent, stack->size + header_size);
   }
 
-  template <typename T>
-  class memory_stack_allocator
+  struct ASTRO_NO_VTABLE allocator
   {
-  protected:
-    memory_stack* m_stack;
+    virtual ~allocator() = 0;
+    virtual void* alloc(uintptr size, uintptr align, const char* file, uintptr line) = 0;
+    virtual void free(void* p, uintptr align, const char* file, uintptr line) = 0;
+  };
 
-  public:
-    typedef T value_type;
-    typedef T *pointer;
-    typedef T &reference;
-    typedef const T *const_pointer;
-    typedef const T &const_reference;
-    typedef unsigned size_type;
-    typedef unsigned difference_type;
-    template <typename U>
-    struct rebind
-    {
-      typedef memory_stack_allocator<U> other;
-    };
+  inline allocator::~allocator()
+  {
+  }
 
-    memory_stack_allocator(memory_stack* stack)
-      : m_stack(stack)
+  struct ASTRO_NO_VTABLE reallocator : public allocator
+  {
+    virtual void* realloc(void* p, uintptr size, uintptr align, const char* file, uintptr line) = 0;
+  };
+
+  inline void*
+  align_pointer(void* ptr, uintptr extra, uintptr align = ASTRO_CONFIG_ALLOCATOR_NATURAL_ALIGNMENT)
+  {
+    union { void* ptr; uintptr addr; } un;
+    un.ptr = ptr;
+    uintptr unaligned = un.addr + extra;
+    uintptr mask = align - 1;
+    uintptr aligned = ASTRO_ALIGN_MASK(unaligned, mask);
+    un.addr = aligned;
+    return ptr;
+  }
+
+  inline bool32
+  is_pointer_aligned(void* ptr, uintptr align = ASTRO_CONFIG_ALLOCATOR_NATURAL_ALIGNMENT)
+  {
+    union { void* ptr; uintptr addr; } un;
+    un.ptr = ptr;
+    return 0 == (un.addr & (align - 1));
+  }
+
+  inline void*
+  alloc(allocator* allocator, uintptr size, uintptr align = 0, const char* file = nullptr, uintptr line = 0)
+  {
+    return allocator->alloc(size, align, file, line);
+  }
+
+  inline void
+  free(allocator* allocator, void* ptr, uintptr align = 0, const char* file = nullptr, uintptr line = 0)
+  {
+    return allocator->free(ptr, align, file, line);
+  }
+
+  inline void*
+  realloc(reallocator* allocator, void* ptr, uintptr size, uintptr align = 0, const char* file = nullptr, uintptr line = 0)
+  {
+    return allocator->realloc(ptr, size, align, file, line);
+  }
+
+  static inline void*
+  aligned_alloc(allocator* allocator, uintptr size, uintptr align, const char* file = nullptr, uintptr line = 0)
+  {
+    uintptr total = size + align;
+    uint8* ptr = (uint8*) alloc(allocator, total, 0, file, line);
+    uint8* aligned = (uint8*) align_pointer(ptr, sizeof(uint32), align);
+    uint32* header = (uint32*)aligned - 1;
+    *header = uint32(aligned - ptr);
+    return aligned;
+  }
+
+  static inline void
+  aligned_free(allocator* allocator, void* ptr, uintptr /*align*/, const char* file = nullptr, uintptr line = 0)
+  {
+    uint8* aligned = (uint8*) ptr;
+    uint32* header = (uint32*) aligned - 1;
+    uint8* fptr = aligned - *header;
+    free(allocator, fptr, 0, file, line);
+  }
+
+  static inline void*
+  aligned_realloc(reallocator* allocator, void* ptr, uintptr size, uintptr align, const char* file = nullptr, uintptr line = 0)
+  {
+    if (ptr == nullptr)
     {
+      return aligned_alloc(allocator, size, align, file, line);
     }
 
-    pointer allocate(unsigned n)
+    uint8* aligned = (uint8*) ptr;
+    uint32 offset = *((uint32*) aligned - 1);
+    uint8* fptr = aligned - offset;
+    uintptr total = size + align;
+    ptr = (uint8*) realloc(allocator, ptr, total, 0, file, line);
+    uint8* new_aligned = (uint8*)align_pointer(ptr, sizeof(uint32), align);
+
+    if (new_aligned == aligned)
     {
-      return reinterpret_cast<T *>(push_size(m_stack, sizeof(T) * n));
+      return aligned;
     }
 
-    void deallocate(pointer p, unsigned n)
+    aligned = fptr + offset;
+    ::memmove(new_aligned, aligned, size);
+    uint32* header = (uint32*)new_aligned - 1;
+    *header = uint32(new_aligned - fptr);
+    return new_aligned;
+  }
+
+  template <typename T>
+  inline void delete_object(allocator* allocator, T* obj, uintptr align = 0, const char* file = nullptr, uintptr line = 0)
+  {
+    if (obj != nullptr)
     {
-      pop_value(m_stack, p, sizeof(T) * n);
+      obj->~T();
+      free(allocator, obj, align, file, line);
+    }
+  }
+
+  struct crt_allocator : public reallocator
+  {
+    crt_allocator() {}
+    virtual ~crt_allocator() {}
+
+    virtual void* alloc(uintptr size, uintptr align, const char* file, uintptr line)
+    {
+      if (ASTRO_CONFIG_ALLOCATOR_NATURAL_ALIGNMENT >= align)
+        return ::malloc(size);
+
+#if ASTRO_COMPILER_MSVC
+      ASTRO_UNUSED(file, line);
+      return _aligned_malloc(size, align);
+#else
+      return astro::aligned_alloc(this, size, align, file, line);
+#endif
     }
 
-    void construct(pointer p, const_reference clone)
+    virtual void free(void* p, uintptr align, const char* file, uintptr line)
     {
-      new (p) T(clone);
+      if (ASTRO_CONFIG_ALLOCATOR_NATURAL_ALIGNMENT >= align)
+      {
+        ::free(p);
+        return;
+      }
+
+#if ASTRO_COMPILER_MSVC
+      ASTRO_UNUSED(file, line);
+      return _aligned_free(p);
+#else
+      return astro::aligned_free(this, p, align, file, line);
+#endif
     }
 
-    void destroy(pointer p)
+    virtual void* realloc(void* p, uintptr size, uintptr align, const char* file, uintptr line)
     {
-      p->~T();
-    }
+      if (ASTRO_CONFIG_ALLOCATOR_NATURAL_ALIGNMENT >= align)
+        return ::realloc(p, size);
 
-    pointer address(reference x) const
-    {
-      return &x;
-    }
-
-    const_pointer address(const_reference x) const
-    {
-      return &x;
-    }
-
-    bool operator==(const memory_stack_allocator &rhs)
-    {
-        return this->m_stack == rhs.m_stack;
-    }
-
-    bool operator!=(const memory_stack_allocator &rhs)
-    {
-      return !operator==(rhs);
+#if ASTRO_COMPILER_MSVC
+      ASTRO_UNUSED(file, line);
+      return _aligned_realloc(p, size, align);
+#else
+      return astro::aligned_realloc(this, p, size, align, file, line);
+#endif
     }
   };
 
-  template <typename T>
-  class static_allocator : public memory_stack_allocator<T>
+  class memory_stack_allocator : public allocator
   {
   public:
-    static_allocator(T* buffer, uintptr buffer_size)
-      : memory_stack_allocator<T>(&stack)
+    memory_stack_allocator(memory_stack* stack)
+      : m_stack(stack)
     {
-      initialize_memory_stack(&stack, buffer_size, (uint8*)buffer);
+
+    }
+
+    virtual void* alloc(uintptr size, uintptr align, const char* file, uintptr line)
+    {
+      return push_size(m_stack, size);
+    }
+
+    virtual void free(void* p, uintptr align, const char* file, uintptr line)
+    {
+      pop_value(m_stack, p);
+    }
+
+  protected:
+    memory_stack* m_stack;
+  };
+
+  class static_allocator : public memory_stack_allocator
+  {
+  public:
+    static_allocator(uint8* buffer, uintptr buffer_size)
+      : memory_stack_allocator(&stack)
+    {
+      initialize_memory_stack(&stack, buffer_size, buffer);
     }
 
   private:
     memory_stack stack;
   };
 
-  // TODO: Better default allocator.
-  template <typename T> using allocator = std::allocator<T>;
+  // TODO: Add config for default allocator.
+#ifdef ASTRO_IMPLEMENTATION
+  static crt_allocator crt_alloc;
+  static allocator* default_allocator = &crt_alloc;
+#endif
+
+  extern allocator* default_allocator;
 }
+
+
 
 #endif

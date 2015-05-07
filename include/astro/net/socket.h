@@ -67,6 +67,9 @@ namespace astro { namespace net
   socket
   socket_create(address_family family, socket_type type, protocol_type protocol);
 
+  void
+  socket_destroy(socket* sock);
+
   bool32
   socket_bind(socket* s, ip_address ip, uint16 port);
 
