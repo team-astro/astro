@@ -17,7 +17,7 @@
 #include <astro/net/socket.h>
 #undef ASTRO_IMPLEMENTATION
 
-astro::log_level astro_log_verbosity = astro::log_level::debug;
+astro::log_level astro_log_verbosity = astro::log_level::none;
 
 #include <greatest/greatest.h>
 GREATEST_MAIN_DEFS();
@@ -31,6 +31,10 @@ GREATEST_MAIN_DEFS();
 int main(int argc, char **argv)
 {
   GREATEST_MAIN_BEGIN();      /* init & parse command-line args */
+
+  if (greatest_info.flags & GREATEST_FLAG_VERBOSE)
+    astro_log_verbosity = astro::log_level::debug;
+
   RUN_SUITE(path_tests);
   RUN_SUITE(socket_tests);
   RUN_SUITE(ip_address_tests);
