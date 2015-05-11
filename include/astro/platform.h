@@ -137,6 +137,8 @@
 #     endif // ASTRO_ARCH_64BIT
 #   endif // !defined(WINVER) && !defined(_WIN32_WINNT)
 #   define ASTRO_PLATFORM_WINDOWS _WIN32_WINNT
+#   undef  ASTRO_PLATFORM_WIN32
+#   define  ASTRO_PLATFORM_WIN32 1
 # else
 #   undef  ASTRO_PLATFORM_WINRT
 #   define ASTRO_PLATFORM_WINRT 1

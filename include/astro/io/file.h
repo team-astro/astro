@@ -24,6 +24,8 @@ namespace astro { namespace io
 #ifdef ASTRO_IMPLEMENTATION
 #if ASTRO_PLATFORM_POSIX
 #include "posix/file.inl"
+#elif ASTRO_PLATFORM_WIN32
+#include "win32/file.inl"
 #else
 #error "astro::io::file not implemented."
 #endif

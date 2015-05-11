@@ -28,6 +28,8 @@ namespace astro { namespace net
 #ifdef ASTRO_IMPLEMENTATION
 #if ASTRO_PLATFORM_POSIX
 #include "posix/dns.inl"
+#elif ASTRO_PLATFORM_WIN32
+#include "win32/dns.inl"
 #else
 #error "astro::net::dns not implemented."
 #endif

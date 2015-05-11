@@ -96,6 +96,8 @@ namespace astro { namespace net
 #ifdef ASTRO_IMPLEMENTATION
 #if ASTRO_PLATFORM_POSIX
 #include "posix/socket.inl"
+#elif ASTRO_PLATFORM_WIN32
+#include "win32/socket.inl"
 #else
 #error "astro::net::socket not implemented."
 #endif

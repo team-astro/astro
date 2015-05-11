@@ -1,7 +1,2 @@
-*.o
-*.a
-*.lib
-*.dep
 .linter-clang-flags
-build
-astro-tests
+.build
