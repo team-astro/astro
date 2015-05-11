@@ -4,6 +4,7 @@
 
 #include <astro/net/dns.h>
 #include <chrono>
+#include <iterator>
 
 using namespace astro;
 using namespace astro::net;
@@ -39,7 +40,7 @@ TEST dns_resolution_succeeds() {
     std::tie(test_dns, test_ips) = addr;
 
     auto addresses = dns::resolve_host_name(test_dns, strlen(test_dns)).get();
-    transform(begin(addresses), end(addresses), back_inserter(result_ips),
+    transform(begin(addresses), end(addresses), std::back_inserter(result_ips),
       [](ip_address& ip)
       {
         char s[INET6_ADDRSTRLEN];

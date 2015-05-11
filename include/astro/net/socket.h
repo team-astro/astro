@@ -53,7 +53,7 @@ namespace astro { namespace net
 
   struct socket
   {
-    int socket;
+    int s;
     socket_type type;
     bool32 is_bound;
     bool32 is_listening;
@@ -94,13 +94,14 @@ namespace astro { namespace net
 
 
 #ifdef ASTRO_IMPLEMENTATION
-#if ASTRO_PLATFORM_POSIX
 #include "posix/socket.inl"
-#elif ASTRO_PLATFORM_WIN32
-#include "win32/socket.inl"
-#else
-#error "astro::net::socket not implemented."
-#endif
+//#if ASTRO_PLATFORM_POSIX
+//#include "posix/socket.inl"
+//#elif ASTRO_PLATFORM_WIN32
+//#include "win32/socket.inl"
+//#else
+//#error "astro::net::socket not implemented."
+//#endif
 #endif
 
 #endif

@@ -158,7 +158,7 @@ namespace astro
     va_list lst_copy;
     va_copy(lst_copy, lst);
 
-    int size_needed = vsnprintf(nullptr, 0, fmt, lst) + 1;
+    size_t size_needed = vsnprintf(nullptr, 0, fmt, lst) + 1;
     va_end(lst);
 
     if (len < size_needed)

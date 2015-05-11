@@ -1,8 +1,16 @@
+#ifdef ASTRO_PLATFORM_WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <iphlpapi.h>
+#pragma comment(lib, "Ws2_32.lib")
+#define close closesocket;
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#endif
 
 namespace astro { namespace net
 {
@@ -34,7 +42,7 @@ namespace astro { namespace net
   {
     if (sock)
     {
-      ::close(sock->socket);
+      ::close(sock->s);
       *sock = {};
     }
   }
@@ -53,7 +61,7 @@ namespace astro { namespace net
     socket result = {};
     result.ip.family = family;
     result.type = type;
-    result.socket = ::socket((int)family, (int)type, (int)protocol);
+    result.s = ::socket((int)family, (int)type, (int)protocol);
 
     return result;
   }
@@ -62,10 +70,10 @@ namespace astro { namespace net
   socket_bind(socket* s, ip_address ip, uint16 port)
   {
     bool32 result = true;
-    if (s && s->socket && s->ip.family == ip.family)
+    if (s && s->s && s->ip.family == ip.family)
     {
-      int yes = 1;
-      if (::setsockopt(s->socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
+      char yes = 1;
+      if (::setsockopt(s->s, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
         log_warn("Error setting SO_REUSEADDR on socket. Bind may fail.");
 
       struct addrinfo* res;
@@ -90,7 +98,7 @@ namespace astro { namespace net
       }
       else
       {
-        if (::bind(s->socket, res->ai_addr, res->ai_addrlen) < 0)
+        if (::bind(s->s, res->ai_addr, res->ai_addrlen) < 0)
         {
           log_error("Error binding socket to port %d", port);
           result = false;
@@ -121,7 +129,7 @@ namespace astro { namespace net
       return false;
     }
 
-    if (::listen(s->socket, backlog) < 0)
+    if (::listen(s->s, backlog) < 0)
     {
       log_error("Error listening on socket.");
       return false;
@@ -155,7 +163,7 @@ namespace astro { namespace net
     }
     else
     {
-      if (::connect(s->socket, res->ai_addr, res->ai_addrlen) < 0)
+      if (::connect(s->s, res->ai_addr, res->ai_addrlen) < 0)
       {
         log_error("Error connecting socket to %s:%d", url, port);
         result = false;
@@ -178,18 +186,18 @@ namespace astro { namespace net
   socket_accept(socket* s)
   {
     socket result = {};
-    if (s && s->socket && s->is_listening)
+    if (s && s->s && s->is_listening)
     {
       struct sockaddr_storage ss = {};
       socklen_t ss_len = sizeof(sockaddr_storage);
-      int conn = ::accept(s->socket, (sockaddr*)&ss, &ss_len);
+      int conn = ::accept(s->s, (sockaddr*)&ss, &ss_len);
       if (conn < 0)
       {
         log_error("Error accepting connection on socket.");
         return result;
       }
 
-      result.socket = conn;
+      result.s = conn;
       result.is_connected = true;
       address_family family = (address_family) ss.ss_family;
       switch (family)
@@ -221,9 +229,9 @@ namespace astro { namespace net
   void
   socket_close(socket* s)
   {
-    if (s && s->socket)
+    if (s && s->s)
     {
-      ::close(s->socket);
+      ::close(s->s);
       *s = {};
     }
   }
@@ -231,11 +239,11 @@ namespace astro { namespace net
   bool32
   socket_send(socket* s, uint8* data, uintptr data_len)
   {
-    if (s && s->socket && s->is_connected)
+    if (s && s->s && s->is_connected)
     {
       do
       {
-        int res = ::send(s->socket, (void*)data, data_len, 0);
+        int res = ::send(s->s, (char*)data, data_len, 0);
         if (res < 0)
         {
           log_error("Error sending data over socket.");
@@ -253,9 +261,9 @@ namespace astro { namespace net
   int32
   socket_recv(socket* s, uint8* data, uintptr data_len)
   {
-    if (s && s->socket && s->is_connected)
+    if (s && s->s && s->is_connected)
     {
-      int res = ::recv(s->socket, (void*)data, data_len, 0);
+      int res = ::recv(s->s, (char*)data, data_len, 0);
       if (res < 0)
       {
         log_error("Error recieving data from socket.");
