@@ -44,7 +44,7 @@ namespace astro { namespace net
 
       winsock_started = true;
     }
-    
+
     return true;
   }
 #else
@@ -72,6 +72,19 @@ namespace astro { namespace net
     }
   }
 
+  // struct sockaddr_result
+  // {
+  //   struct sockaddr_storage sa;
+  //   uint16 sa_len;
+  // };
+  //
+  // sockaddr_result
+  // ip_address_to_sockaddr(ip_address ip, uint16 port)
+  // {
+  //   sockaddr_result result = {};
+  //   result.sa
+  // }
+
   void
   socket_destroy(socket* sock)
   {
@@ -98,7 +111,8 @@ namespace astro { namespace net
       }
     }
 
-    result.ip.family = family;
+    socket result = {};
+    result.family = family;
     result.type = type;
     result.s = ::socket((int)family, (int)type, (int)protocol);
 
@@ -109,7 +123,7 @@ namespace astro { namespace net
   socket_bind(socket* s, ip_address ip, uint16 port)
   {
     bool32 result = true;
-    if (s && s->s && s->ip.family == ip.family)
+    if (s && s->s && s->family == ip.family)
     {
       char yes = 1;
       if (::setsockopt(s->s, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
@@ -117,7 +131,7 @@ namespace astro { namespace net
 
       struct addrinfo* res;
       struct addrinfo hints = {};
-      hints.ai_family = (int) s->ip.family;
+      hints.ai_family = (int) s->family;
       hints.ai_socktype = (int) s->type;
       char ip_str[256];
       char port_str[10];
@@ -190,7 +204,7 @@ namespace astro { namespace net
 
     struct addrinfo* res;
     struct addrinfo hints = {};
-    hints.ai_family = (int) s->ip.family;
+    hints.ai_family = (int) s->family;
     hints.ai_socktype = (int) s->type;
 
     ip_address_to_string(url, sizeof(url), &ip);
@@ -238,8 +252,8 @@ namespace astro { namespace net
 
       result.s = conn;
       result.is_connected = true;
-      address_family family = (address_family) ss.ss_family;
-      switch (family)
+      result.family = (address_family) ss.ss_family;
+      switch (result.family)
       {
       case address_family::inter_network:
         {
@@ -319,4 +333,3 @@ namespace astro { namespace net
     return 0;
   }
 }}
-

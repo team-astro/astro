@@ -10,7 +10,7 @@
 #include <cstring>
 #include <functional>
 
-#if ASTRO_CONFIG_ALLOCATOR_DEBUG
+#ifdef ASTRO_CONFIG_ALLOCATOR_DEBUG
 #  define ASTRO_ALLOC(_allocator, _size)                         astro::alloc(_allocator, _size, 0, __FILE__, __LINE__)
 #  define ASTRO_REALLOC(_allocator, _ptr, _size)                 astro::realloc(_allocator, _ptr, _size, 0, __FILE__, __LINE__)
 #  define ASTRO_FREE(_allocator, _ptr)                           astro::free(_allocator, _ptr, 0, __FILE__, __LINE__)
@@ -139,7 +139,7 @@ namespace astro
 
   template <typename t>
   inline bool32
-  pop_array(memory_stack* stack, t* value, uintptr count)
+  pop_array(memory_stack* stack, t* value)
   {
     return pop_value(stack, (void*)value);
   }
@@ -180,8 +180,7 @@ namespace astro
   inline bool32
   pop_string(memory_stack* stack, const char* value)
   {
-    auto len = strlen(value);
-    return pop_array<const char>(stack, value, len + 1);
+    return pop_array<const char>(stack, value);
   }
 
   template <typename t>
@@ -377,12 +376,12 @@ namespace astro
 
     }
 
-    virtual void* alloc(uintptr size, uintptr align, const char* file, uintptr line)
+    virtual void* alloc(uintptr size, uintptr /*align*/, const char* /*file*/, uintptr /*line*/)
     {
       return push_size(m_stack, size);
     }
 
-    virtual void free(void* p, uintptr align, const char* file, uintptr line)
+    virtual void free(void* p, uintptr /*align*/, const char* /*file*/, uintptr /*line*/)
     {
       pop_value(m_stack, p);
     }

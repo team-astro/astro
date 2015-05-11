@@ -174,7 +174,5 @@ namespace astro { namespace net
 
     return nullptr;
   }
-
-
 }}
 #endif

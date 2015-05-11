@@ -323,6 +323,7 @@ function toolchain(_buildDir, _libDir)
 		"__STDC_LIMIT_MACROS",
 		"__STDC_FORMAT_MACROS",
 		"__STDC_CONSTANT_MACROS",
+		"__STDC_VERSION__=19901L"
 	}
 
 	configuration { "Debug" }
@@ -791,6 +792,9 @@ function toolchain(_buildDir, _libDir)
 			"-Wunused-value",
 			"-Wundef",
 		}
+		buildoptions_cpp {
+			"-std=c++11",
+		}
 		includedirs { path.join(astroDir, "include/compat/osx") }
 
 	configuration { "ios*" }
@@ -801,6 +805,10 @@ function toolchain(_buildDir, _libDir)
 			"-Wfatal-errors",
 			"-Wunused-value",
 			"-Wundef",
+
+		}
+		buildoptions_cpp {
+			"-std=c++11",
 		}
 		includedirs { path.join(astroDir, "include/compat/ios") }
 
@@ -863,7 +871,7 @@ function toolchain(_buildDir, _libDir)
 		}
 		defines {
 			"__VCCOREVER__=0x04000000", -- There is no special prefedined compiler symbol to detect RaspberryPi, faking it.
-			"__STDC_VERSION__=199901L",
+			"__STDC_VERSION__=19901L",
 		}
 		buildoptions {
 			"-Wunused-value",

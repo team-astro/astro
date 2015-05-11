@@ -82,7 +82,6 @@ namespace astro { namespace io { namespace path
     va_list lst;
     va_start(lst, dst_sz);
     bool sep = false;
-    size_t slen = 0;
     const char* src = dst;
     const char* src_next = va_arg(lst, const char*);
     do

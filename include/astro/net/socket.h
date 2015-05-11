@@ -59,6 +59,7 @@ namespace astro { namespace net
     bool32 is_listening;
     bool32 is_connected;
     ip_address ip;
+    address_family family;
     uint16 port;
   };
 

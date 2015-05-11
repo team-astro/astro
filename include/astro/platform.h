@@ -22,6 +22,7 @@
 #define ASTRO_PLATFORM_RPI         0
 #define ASTRO_PLATFORM_WIN32       0
 #define ASTRO_PLATFORM_WINRT       0
+#define ASTRO_PLATFORM_WINDOWS     0
 
 #define ASTRO_CPU_ARM          0
 #define ASTRO_CPU_JIT          0

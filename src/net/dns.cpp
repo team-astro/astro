@@ -29,7 +29,6 @@ namespace astro { namespace net
     return std::async(std::launch::async,
       [](const char* name, uintptr name_len, address_family family)
       {
-        uintptr address_count = 0;
         std::vector<ip_address> result;
         struct addrinfo hints = {};
         hints.ai_family = PF_UNSPEC;
@@ -38,10 +37,10 @@ namespace astro { namespace net
         struct addrinfo* infos = nullptr;
 
         char host[NI_MAXHOST] = {};
-        char srv[NI_MAXSERV] = {};
 
         strncpy(host, name, min(sizeof(host), name_len));
 
+        log_debug("Resolving DNS name %s", host);
         int gai_res = getaddrinfo(host, nullptr, &hints, &infos);
         if (gai_res != 0)
         {
