@@ -14,8 +14,8 @@ namespace astro { namespace net
   ip_address ip_address::node_local(0xff01, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001);
   ip_address ip_address::link_local(0xff02, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001);
 
-  ip_address::ip_address(address_family family)
-    : family(family)
+  ip_address::ip_address(address_family fam)
+    : family(fam)
     , scope(0)
   {
     memset(addr, 0, sizeof(uint8) * ASTRO_COUNTOF(addr));
@@ -45,9 +45,9 @@ namespace astro { namespace net
     addr[3] = d;
   }
 
-  ip_address::ip_address(uint16 a, uint16 b, uint16 c, uint16 d, uint16 e, uint16 f, uint16 g, uint16 h, uint32 scope)
+  ip_address::ip_address(uint16 a, uint16 b, uint16 c, uint16 d, uint16 e, uint16 f, uint16 g, uint16 h, uint32 sid)
     : family(address_family::inter_network_v6)
-    , scope(scope)
+    , scope(sid)
   {
     memset(addr_v6, 0, sizeof(uint16) * ASTRO_COUNTOF(addr_v6));
 
@@ -62,8 +62,8 @@ namespace astro { namespace net
   }
 
   ip_address::ip_address(const ip_address& rhs)
-    : scope(rhs.scope)
-    , family(rhs.family)
+    : family(rhs.family)
+    , scope(rhs.scope)
   {
     memcpy(addr, rhs.addr, sizeof(uint8) * ASTRO_COUNTOF(addr));
   }
@@ -361,7 +361,6 @@ namespace astro { namespace net
     }
     else if (ip->family == address_family::inter_network_v6)
     {
-      uint16* addr = ip->addr_v6;
       bool32 is_ipv4_mapped = ip_address_is_v4_mapped(ip);
 
       constexpr uintptr buffer_len = 46;

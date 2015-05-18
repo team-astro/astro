@@ -10,6 +10,8 @@
 #if ASTRO_PLATFORM_WIN32 || ASTRO_PLATFORM_WINRT
 # define WIN32_LEAN_AND_MEAN 1
 # include <windows.h>
+#else
+# include <dlfcn.h>
 #endif
 
 #if ASTRO_PLATFORM_OSX
@@ -33,12 +35,12 @@ namespace astro
 #endif
   }
 
-  inline void* dlclose(void* handle)
+  inline int dlclose(void* handle)
   {
 #if ASTRO_PLATFORM_WIN32
-    return (void*) ::FreeLibrary((HMODULE) handle);
+    return ::FreeLibrary((HMODULE) handle);
 #elif ASTRO_PLATFORM_NACL || ASTRO_PLATFORM_EMSCRIPTEN || ASTRO_PLATFORM_WINRT
-    return nullptr;
+    return 0;
 #else
     return ::dlclose(handle);
 #endif

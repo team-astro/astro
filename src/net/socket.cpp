@@ -111,7 +111,6 @@ namespace astro { namespace net
       }
     }
 
-    socket result = {};
     result.family = family;
     result.type = type;
     result.s = ::socket((int)family, (int)type, (int)protocol);

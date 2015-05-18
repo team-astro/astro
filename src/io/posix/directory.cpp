@@ -1,7 +1,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include <fcntl.h>
+
+#include <astro/io/directory.h>
 
 namespace astro { namespace io
 {

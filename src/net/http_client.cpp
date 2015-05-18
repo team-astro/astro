@@ -25,9 +25,9 @@ namespace astro { namespace net
       uintptr body_written;
     };
 
-    static int on_message_begin(http_parser* p)
+    static int on_message_begin(http_parser*)
     {
-      auto r = (http_request_closure*) p->data;
+      //auto r = (http_request_closure*) p->data;
       return 0;
     }
 
@@ -152,9 +152,6 @@ namespace astro { namespace net
       http_request_closure* closure)
     {
       socket* conn = closure->request->socket;
-      http_response* res = closure->response;
-      http_request* req = closure->request;
-
       bool32 made_request = false;
       if (conn->is_connected || socket_connect(conn, ip, port))
       {
@@ -285,14 +282,13 @@ namespace astro { namespace net
       closure.allocator = alloc;
 
       const char* host = url + seg_host.off;
+      uintptr host_len = seg_host.len;
       auto ips = dns::resolve_host_name(host, seg_host.len, address_family::inter_network).get();
       for (auto& ip : ips)
       {
         ip_address_to_string(buffer, sizeof(buffer), &ip);
         log_debug("resolved to %s", buffer);
 
-        const char* host = url + seg_host.off;
-        uintptr host_len = seg_host.len;
         const char* path = "/";
         uintptr path_len = 1;
         if (seg_path.len > 0)

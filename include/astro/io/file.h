@@ -14,9 +14,7 @@ namespace astro { namespace io
   struct file
   {
     static bool exists(const char* path);
-
-    template <typename Allocator = allocator<char>>
-    static const char* read_all_text(const char* path, Allocator alloc = Allocator());
+    static const char* read_all_text(const char* path, allocator* alloc = default_allocator);
   };
 }}
 

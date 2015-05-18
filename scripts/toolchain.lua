@@ -91,6 +91,11 @@ function toolchain(_buildDir, _libDir)
 		iosPlatform = _OPTIONS["with-ios"]
 	end
 
+	local osxPlatform = "10.10"
+	if _OPTIONS["with-osx"] then
+		osxPlatform = _OPTIONS["with-osx"]
+	end
+
 	if _ACTION == "gmake" then
 
 		if nil == _OPTIONS["gcc"] then
@@ -323,7 +328,7 @@ function toolchain(_buildDir, _libDir)
 		"__STDC_LIMIT_MACROS",
 		"__STDC_FORMAT_MACROS",
 		"__STDC_CONSTANT_MACROS",
-		"__STDC_VERSION__=19901L"
+		--"__STDC_VERSION__=199901L"
 	}
 
 	configuration { "Debug" }
@@ -791,9 +796,16 @@ function toolchain(_buildDir, _libDir)
 			"-msse2",
 			"-Wunused-value",
 			"-Wundef",
+
+			"--sysroot=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" .. osxPlatform .. ".sdk",
 		}
 		buildoptions_cpp {
 			"-std=c++11",
+		}
+		linkoptions {
+			"-std=c++11",
+			"-lc++",
+			"--sysroot=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" .. osxPlatform .. ".sdk",
 		}
 		includedirs { path.join(astroDir, "include/compat/osx") }
 

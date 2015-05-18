@@ -14,7 +14,7 @@ using namespace astro::net;
 
 using namespace std::chrono;
 
-constexpr uint32 test_port = 54321;
+constexpr uint32 kSocketTestPort = 54321;
 
 TEST socket_should_listen_and_connect()
 {
@@ -26,7 +26,7 @@ TEST socket_should_listen_and_connect()
   {
     auto server = socket_create(address_family::inter_network,
       socket_type::stream, protocol_type::tcp);
-    ASSERT(socket_bind(&server, ip_address::loopback, test_port));
+    ASSERT(socket_bind(&server, ip_address::loopback, kSocketTestPort));
     ASSERT(socket_listen(&server, 10));
 
     *listening = true;
@@ -44,7 +44,7 @@ TEST socket_should_listen_and_connect()
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
   }
 
-  ASSERT(socket_connect(&client, ip_address::loopback, test_port));
+  ASSERT(socket_connect(&client, ip_address::loopback, kSocketTestPort));
 
   server_thread.join();
 
@@ -63,7 +63,7 @@ TEST socket_should_send_and_recv()
   {
     auto server = socket_create(address_family::inter_network,
       socket_type::stream, protocol_type::tcp);
-      socket_bind(&server, ip_address::loopback, test_port);
+      socket_bind(&server, ip_address::loopback, kSocketTestPort);
     socket_listen(&server, 10);
 
     *listening = true;
@@ -96,7 +96,7 @@ TEST socket_should_send_and_recv()
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
   }
 
-  socket_connect(&client, ip_address::loopback, test_port);
+  socket_connect(&client, ip_address::loopback, kSocketTestPort);
 
   char ip[INET6_ADDRSTRLEN + 7];
   ip_address_to_string(ip, sizeof(ip), &client.ip, client.port);

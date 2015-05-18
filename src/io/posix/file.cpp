@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <astro/io/file.h>
+
 namespace astro { namespace io
 {
   bool
@@ -12,21 +14,21 @@ namespace astro { namespace io
     return stat(path, &s) == 0 && (S_ISREG(s.st_mode) || S_ISLNK(s.st_mode));
   }
 
-  template<typename Allocator> const char*
-  file::read_all_text(const char* path, Allocator alloc)
+  const char*
+  file::read_all_text(const char* path, allocator* alloc)
   {
     const char* contents = nullptr;
     if (exists(path))
     {
       FILE* f = fopen(path, "r");
       fseek(f, 0, SEEK_END);
-      long len = ftell(f);
+      unsigned long len = ftell(f);
 
-      contents = alloc.allocate(len + 1);
+      contents = (const char*) ASTRO_ALLOC(alloc, len + 1);
       fseek(f, 0, SEEK_SET);
       if (fread((void*)contents, sizeof(char), len, f) < len)
       {
-        alloc.deallocate(contents, len + 1);
+        ASTRO_FREE(alloc, (void*)contents);
         contents = nullptr;
       }
     }

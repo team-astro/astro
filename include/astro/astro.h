@@ -5,8 +5,8 @@
 #ifndef ASTRO_H
 #define ASTRO_H
 
-#include <cstdint> // uint32_t
-#include <cstdlib> // size_t
+#include <stdint.h> // uint32_t
+#include <stdlib.h> // size_t
 #include <algorithm>
 
 #include "config.h"
