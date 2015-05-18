@@ -6,6 +6,8 @@
 #include <chrono>
 #include <iterator>
 
+#define INET6_ADDRSTRLEN 48
+
 using namespace astro;
 using namespace astro::net;
 

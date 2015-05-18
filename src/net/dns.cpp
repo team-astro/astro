@@ -1,7 +1,22 @@
+#include <astro/astro.h>
+
+#if ASTRO_PLATFORM_WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <iphlpapi.h>
+#pragma comment(lib, "Ws2_32.lib")
+#define close closesocket;
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <unistd.h>
 #include <netdb.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#endif
+
+#include <astro/net/dns.h>
+#include <astro/net/ip_address.h>
+
 #include <future>
 #include <tuple>
 #include <vector>

@@ -1,9 +1,11 @@
-#ifdef ASTRO_PLATFORM_WIN32
+#include <astro/astro.h>
+
+#if ASTRO_PLATFORM_WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
 #pragma comment(lib, "Ws2_32.lib")
-#define close closesocket;
+#define close closesocket
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -12,9 +14,42 @@
 #include <arpa/inet.h>
 #endif
 
+#include <astro/net/socket.h>
+
 namespace astro { namespace net
 {
   static char s_hostname[256];
+
+#if ASTRO_PLATFORM_WIN32
+  static bool winsock_started = false;
+
+  bool init_socket()
+  {
+    if (!winsock_started)
+    {
+      WORD version_requested = MAKEWORD(2, 2);
+      WSADATA wsa = {};
+      int err = WSAStartup(version_requested, &wsa);
+      if (err != 0)
+      {
+        log_error("Error initializing sockets.");
+        return false;
+      }
+
+      if (LOBYTE(wsa.wVersion) != 2 || HIBYTE(wsa.wVersion) != 2)
+      {
+        log_error("No usable version of winsock.");
+        return false;
+      }
+
+      winsock_started = true;
+    }
+    
+    return true;
+  }
+#else
+  bool init_socket() { return true; }
+#endif
 
   void *get_in_addr(struct sockaddr *sa)
   {
@@ -29,11 +64,11 @@ namespace astro { namespace net
   {
     if (sa->sa_family == AF_INET)
     {
-      ((struct sockaddr_in*)sa)->sin_port = htonl(port);
+      ((struct sockaddr_in*)sa)->sin_port = htons(port);
     }
     else
     {
-      ((struct sockaddr_in6*)sa)->sin6_port = htonl(port);
+      ((struct sockaddr_in6*)sa)->sin6_port = htons(port);
     }
   }
 
@@ -50,15 +85,19 @@ namespace astro { namespace net
   socket
   socket_create(address_family family, socket_type type, protocol_type protocol)
   {
+    socket result = {};
+    if (!init_socket())
+      return result;
+
     if (s_hostname[0] == '\0')
     {
       if (gethostname(s_hostname, sizeof(s_hostname)) < 0)
       {
         log_error("Error retrieving hostname");
+        return result;
       }
     }
 
-    socket result = {};
     result.ip.family = family;
     result.type = type;
     result.s = ::socket((int)family, (int)type, (int)protocol);
@@ -280,3 +319,4 @@ namespace astro { namespace net
     return 0;
   }
 }}
+

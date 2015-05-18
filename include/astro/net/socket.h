@@ -92,16 +92,4 @@ namespace astro { namespace net
   socket_recv(socket* s, uint8* data, uintptr data_len);
 }}
 
-
-#ifdef ASTRO_IMPLEMENTATION
-#include "posix/socket.inl"
-//#if ASTRO_PLATFORM_POSIX
-//#include "posix/socket.inl"
-//#elif ASTRO_PLATFORM_WIN32
-//#include "win32/socket.inl"
-//#else
-//#error "astro::net::socket not implemented."
-//#endif
-#endif
-
 #endif

@@ -10,6 +10,8 @@ using namespace astro::net;
 #include <chrono>
 #include <thread>
 
+#define INET6_ADDRSTRLEN 48
+
 using namespace std::chrono;
 
 constexpr uint32 test_port = 54321;

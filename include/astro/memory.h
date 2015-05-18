@@ -404,15 +404,7 @@ namespace astro
     memory_stack stack;
   };
 
-  // TODO: Add config for default allocator.
-#ifdef ASTRO_IMPLEMENTATION
-  static crt_allocator crt_alloc;
-  static allocator* default_allocator = &crt_alloc;
-#endif
-
   extern allocator* default_allocator;
 }
-
-
 
 #endif
