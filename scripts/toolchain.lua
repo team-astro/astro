@@ -796,16 +796,18 @@ function toolchain(_buildDir, _libDir)
 			"-msse2",
 			"-Wunused-value",
 			"-Wundef",
-
-			"--sysroot=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" .. osxPlatform .. ".sdk",
+			--"--sysroot=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" .. osxPlatform .. ".sdk",
 		}
 		buildoptions_cpp {
+			"-std=c++11",
+		}
+		buildoptions_objc {
 			"-std=c++11",
 		}
 		linkoptions {
 			"-std=c++11",
 			"-lc++",
-			"--sysroot=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" .. osxPlatform .. ".sdk",
+			--"--sysroot=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" .. osxPlatform .. ".sdk",
 		}
 		includedirs { path.join(astroDir, "include/compat/osx") }
 
