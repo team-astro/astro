@@ -307,10 +307,14 @@ function toolchain(_buildDir, _libDir)
 		if "osx" == _OPTIONS["xcode"] then
 			premake.xcode.toolset = "macosx"
 			location (path.join(_buildDir, "projects", _ACTION .. "-osx"))
+			targetdir (path.join(_buildDir, "osx_xcode/bin"))
+			objdir (path.join(_buildDir, "osx_xcode/obj"))
 
 		elseif "ios" == _OPTIONS["xcode"] then
 			premake.xcode.toolset = "iphoneos"
 			location (path.join(_buildDir, "projects", _ACTION .. "-ios"))
+			targetdir (path.join(_buildDir, "ios_xcode/bin"))
+			objdir (path.join(_buildDir, "ios_xcode/obj"))
 		end
 	end
 
