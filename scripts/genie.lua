@@ -15,11 +15,13 @@ solution "astro"
 
 
 ASTRO_DIR = path.getabsolute("..")
-local ASTRO_BUILD_DIR = path.join(ASTRO_DIR, ".build")
+if BUILD_DIR == nil then
+  BUILD_DIR = path.join(ASTRO_DIR, ".build")
+end
 ASTRO_THIRD_PARTY_DIR = path.join(ASTRO_DIR, "lib")
 
 dofile "toolchain.lua"
-toolchain(ASTRO_BUILD_DIR, ASTRO_THIRD_PARTY_DIR)
+toolchain(BUILD_DIR, ASTRO_THIRD_PARTY_DIR)
 
 function copyLib()
 end
