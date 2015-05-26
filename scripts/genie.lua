@@ -16,7 +16,7 @@ solution "astro"
 
 ASTRO_DIR = path.getabsolute("..")
 local ASTRO_BUILD_DIR = path.join(ASTRO_DIR, ".build")
-ASTRO_THIRD_PARTY_DIR = path.join(ASTRO_DIR, "thirdparty")
+ASTRO_THIRD_PARTY_DIR = path.join(ASTRO_DIR, "lib")
 
 dofile "toolchain.lua"
 toolchain(ASTRO_BUILD_DIR, ASTRO_THIRD_PARTY_DIR)

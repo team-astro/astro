@@ -31,7 +31,7 @@ project "astro"
 
   includedirs {
 		path.join(ASTRO_DIR, "include"),
-		path.join(ASTRO_DIR, "thirdparty"),
+		ASTRO_THIRD_PARTY_DIR,
   }
   defines {
     "ASTRO_IMPLEMENTATION"

@@ -800,7 +800,11 @@ function toolchain(_buildDir, _libDir)
 			"-msse2",
 			"-Wunused-value",
 			"-Wundef",
+			"-std=c++11"
 			--"--sysroot=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" .. osxPlatform .. ".sdk",
+		}
+		options {
+			"ForceCpp"
 		}
 		buildoptions_cpp {
 			"-std=c++11",
