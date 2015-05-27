@@ -1,4 +1,12 @@
-solution "astro"
+
+
+ASTRO_DIR = path.getabsolute("..")
+if BUILD_DIR == nil then
+  BUILD_DIR = path.join(ASTRO_DIR, ".build")
+  solution "astro"
+end
+ASTRO_THIRD_PARTY_DIR = path.join(ASTRO_DIR, "lib")
+
   configurations {
     "Debug",
     "Release"
@@ -12,13 +20,6 @@ solution "astro"
 
   language "C++"
   startproject "astro.tests"
-
-
-ASTRO_DIR = path.getabsolute("..")
-if BUILD_DIR == nil then
-  BUILD_DIR = path.join(ASTRO_DIR, ".build")
-end
-ASTRO_THIRD_PARTY_DIR = path.join(ASTRO_DIR, "lib")
 
 dofile "toolchain.lua"
 toolchain(BUILD_DIR, ASTRO_THIRD_PARTY_DIR)
