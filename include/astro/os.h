@@ -10,7 +10,7 @@
 #if ASTRO_PLATFORM_WIN32 || ASTRO_PLATFORM_WINRT
 # define WIN32_LEAN_AND_MEAN 1
 # include <windows.h>
-#else
+#elif ASTRO_PLATFORM_NACL == 0 && ASTRO_PLATFORM_EMSCRIPTEN == 0
 # include <dlfcn.h>
 #endif
 

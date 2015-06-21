@@ -9,7 +9,7 @@
 
 #if ASTRO_COMPILER_MSVC || ASTRO_COMPILER_MSVC_COMPATIBLE
 #include <intrin.h>
-#else
+#elif !ASTRO_PLATFORM_NACL && !ASTRO_PLATFORM_EMSCRIPTEN
 #include <immintrin.h>
 #endif
 
