@@ -7,7 +7,7 @@ StaticLibrary {
       Dir = _G.ASTRO_ROOT .. "src",
       Extensions = { ".cpp", ".mm" },
       Filters = {
-        { Pattern = "/win32/"; Config = "win*-*-*" },
+        { Pattern = "/win32/"; Config = { "win32-*-*", "win64-*-*" } },
         { Pattern = "/posix/"; Config = { "osx-*-*", "nacl-*-*", "asmjs-*-*" } },
       },
     },

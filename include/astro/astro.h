@@ -39,6 +39,12 @@ namespace astro
   template <typename Ty>
   inline Ty min(Ty a, Ty b) { return a < b ? a : b; }
 
+  inline bool ignore_c4127(bool _x)
+	{
+		return _x;
+	}
+#define ASTRO_IGNORE_C4127(_x) astro::ignore_c4127(!!(_x) )
+
 } // namespace astro
 
 // Annoying C++0x stuff..
