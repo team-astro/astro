@@ -14,6 +14,7 @@
 #include "types.h"
 #include "logging.h"
 #include "os.h"
+#include "math.h"
 
 #if ASTRO_COMPILER_MSVC || ASTRO_COMPILER_MSVC_COMPATIBLE
 # define ASTRO_PACK_STRUCT __declspec(align(1))
